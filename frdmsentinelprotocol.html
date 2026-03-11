@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocole DM Sentinel - Détails du Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0b0e14; color: #ffffff; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-text { color: #00d4ff; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+        .neon-border { border: 1px solid #00d4ff; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }
+        .step-number { background: linear-gradient(135deg, #00d4ff, #005f73); }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-16">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 bg-[#00d4ff] rounded-2xl flex items-center justify-center text-[#0b0e14] text-3xl font-bold shadow-lg shadow-[#00d4ff]/20">DM</div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Protocole <span class="neon-text">DM Sentinel</span></h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto">Guide technique sur le processus d'audit, d'atténuation et critères de notation de risque.</p>
+        </header>
+
+        <section class="mb-20">
+            <h2 class="text-2xl font-semibold mb-8 border-l-4 border-[#00d4ff] pl-4">Flux de Travail du Service</h2>
+            <div class="grid gap-6">
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">1</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Activation via Paiement Global</h3>
+                        <p class="text-gray-400">Le processus est déclenché instantanément après confirmation du paiement via <strong>Stripe, Mercado Pago ou Pix</strong>.</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">2</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Sentinel Engine: Scan Approfondi</h3>
+                        <p class="text-gray-400">Notre moteur Python effectue un fingerprinting non invasif pour identifier les versions CMS et fichiers exposés (.env, .git).</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">3</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Croisement d'Intelligence (CVE)</h3>
+                        <p class="text-gray-400">Les versions détectées sont comparées avec notre base de données <strong>Common Vulnerabilities and Exposures (CVE)</strong>.</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">4</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Alertes et Rapports</h3>
+                        <p class="text-gray-400">Si le Score de Risque est inférieur à 70, une alerte rouge est envoyée par Telegram. Les données alimentent votre tableau de bord <strong>Power BI</strong>.</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">5</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Sentinel Academy Onboarding</h3>
+                        <p class="text-gray-400">Vos identifiants Moodle sont envoyés pour débuter la formation obligatoire en hygiène numérique.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-20">
+            <h2 class="text-2xl font-semibold mb-8 border-l-4 border-[#ff4b2b] pl-4">Algorithme de Scoring</h2>
+            <div class="glass p-8 rounded-3xl neon-border">
+                <p class="mb-6 text-gray-300">Le <strong>Sentinel Score</strong> commence à <strong>100 points</strong>. Des points sont déduits selon l'impact potentiel sur la sécurité.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-[#00d4ff] border-b border-white/10 uppercase text-xs tracking-widest">
+                                <th class="py-4 px-2">Catégorie</th>
+                                <th class="py-4 px-2">Impact (Déduction)</th>
+                                <th class="py-4 px-2">Exemple de découverte</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Critique</td><td class="py-4 px-2 text-[#ff4b2b]">-40 Points</td><td class="py-4 px-2">Version CMS vulnérable à l'exécution de code à distance.</td></tr>
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Haute</td><td class="py-4 px-2 text-orange-500">-20 Points</td><td class="py-4 px-2">Fichiers sensibles exposés ou SSL arrivant à expiration.</td></tr>
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Moyenne</td><td class="py-4 px-2 text-yellow-500">-10 Points</td><td class="py-4 px-2">Absence d'en-têtes de sécurité (CSP, HSTS).</td></tr>
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Basse</td><td class="py-4 px-2 text-blue-400">-5 Points</td><td class="py-4 px-2">Exposition de la version du serveur.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-10 grid grid-cols-3 gap-4 text-center">
+                    <div class="p-4 bg-green-500/10 border border-green-500/30 rounded-xl"><span class="block text-2xl font-bold text-green-500">85-100</span><span class="text-xs uppercase">Sûr</span></div>
+                    <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl"><span class="block text-2xl font-bold text-yellow-500">70-84</span><span class="text-xs uppercase">Avertissement</span></div>
+                    <div class="p-4 bg-red-500/10 border border-red-500/30 rounded-xl"><span class="block text-2xl font-bold text-red-500">&lt; 70</span><span class="text-xs uppercase">Critique</span></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-gray-500 text-sm mt-20 border-t border-white/5 pt-10">
+            <p>DM Global Operations - Sentinel Security Division</p>
+            <p class="mt-2 italic">"Protéger l'infrastructure numérique de l'Argentine pour le monde."</p>
+        </footer>
+    </div>
+</body>
+</html>

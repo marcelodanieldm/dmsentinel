@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="eo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protokolo DM Sentinel - Servaj Detaloj</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0b0e14; color: #ffffff; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-text { color: #00d4ff; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+        .neon-border { border: 1px solid #00d4ff; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }
+        .step-number { background: linear-gradient(135deg, #00d4ff, #005f73); }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-16">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 bg-[#00d4ff] rounded-2xl flex items-center justify-center text-[#0b0e14] text-3xl font-bold shadow-lg shadow-[#00d4ff]/20">DM</div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Protokolo <span class="neon-text">DM Sentinel</span></h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto">Teknika gvidilo pri la revizia procezo, mildigo kaj kriterioj por poentado de risko.</p>
+        </header>
+
+        <section class="mb-20">
+            <h2 class="text-2xl font-semibold mb-8 border-l-4 border-[#00d4ff] pl-4">Serva Laborfluo</h2>
+            <div class="grid gap-6">
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">1</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Aktivigo per Tutmonda Pago</h3>
+                        <p class="text-gray-400">La procezo estas tuj iniciatita post konfirmo de pago per <strong>Stripe, Mercado Pago aŭ Pix</strong>.</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">2</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Sentinel Engine: Profunda Skanado</h3>
+                        <p class="text-gray-400">Nia Python-motoro rulas ne-invadan fingroprintadon por identigi versiojn de CMS kaj malkovritajn dosierojn (.env, .git).</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">3</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Inteligenta Krucreferenco (CVE)</h3>
+                        <p class="text-gray-400">Malkovritaj versioj estas komparitaj kun nia datumbazo <strong>Common Vulnerabilities and Exposures (CVE)</strong>.</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">4</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Alarmoj kaj Raportado</h3>
+                        <p class="text-gray-400">Se la Risko-Poentaro estas sub 70, ruĝa alarmo estas sendata per Telegramo. La datumoj iras al via <strong>Power BI</strong> panelo.</p>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-2xl flex gap-6 items-start">
+                    <div class="step-number w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">5</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Sentinel Academy Onboarding</h3>
+                        <p class="text-gray-400">Aliĝiloj por Moodle estas sendataj por komenci la devigan trejnadon pri cifereca higieno.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-20">
+            <h2 class="text-2xl font-semibold mb-8 border-l-4 border-[#ff4b2b] pl-4">Algoritmo por Poentado</h2>
+            <div class="glass p-8 rounded-3xl neon-border">
+                <p class="mb-6 text-gray-300">La <strong>Sentinel Score</strong> komenciĝas ĉe <strong>100 poentoj</strong>. Poentoj estas deduktitaj laŭ la potenca efiko al sekureco.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-[#00d4ff] border-b border-white/10 uppercase text-xs tracking-widest">
+                                <th class="py-4 px-2">Kategorio</th>
+                                <th class="py-4 px-2">Efiko (Dedukto)</th>
+                                <th class="py-4 px-2">Ekzemplo de Trovaĵo</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Kritika</td><td class="py-4 px-2 text-[#ff4b2b]">-40 Poentoj</td><td class="py-4 px-2">Versio de CMS vundebla al fora koda plenumo.</td></tr>
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Alta</td><td class="py-4 px-2 text-orange-500">-20 Poentoj</td><td class="py-4 px-2">Malkovritaj sentemaj dosieroj aŭ baldaŭ eksvalidiĝanta SSL.</td></tr>
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Meza</td><td class="py-4 px-2 text-yellow-500">-10 Poentoj</td><td class="py-4 px-2">Manko de sekurecaj kapglavoj (CSP, HSTS).</td></tr>
+                            <tr class="border-b border-white/5"><td class="py-4 px-2 font-bold">Malalta</td><td class="py-4 px-2 text-blue-400">-5 Poentoj</td><td class="py-4 px-2">Malkovrita servila versio.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-10 grid grid-cols-3 gap-4 text-center">
+                    <div class="p-4 bg-green-500/10 border border-green-500/30 rounded-xl"><span class="block text-2xl font-bold text-green-500">85-100</span><span class="text-xs uppercase">Sekura</span></div>
+                    <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl"><span class="block text-2xl font-bold text-yellow-500">70-84</span><span class="text-xs uppercase">Averto</span></div>
+                    <div class="p-4 bg-red-500/10 border border-red-500/30 rounded-xl"><span class="block text-2xl font-bold text-red-500">&lt; 70</span><span class="text-xs uppercase">Kritika</span></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-gray-500 text-sm mt-20 border-t border-white/5 pt-10">
+            <p>DM Global Operations - Sentinel Security Division</p>
+            <p class="mt-2 italic">"Protektante la ciferecan infrastrukturon de Argentino por la mondo."</p>
+        </footer>
+    </div>
+</body>
+</html>
