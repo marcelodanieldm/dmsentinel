@@ -22,7 +22,16 @@ beautifulsoup4>=4.12.0
 Flask>=3.0.0
 Werkzeug>=3.0.0
 
-# ==================== GOOGLE SHEETS INTEGRATION ====================
+# ==================== PAYMENT INTEGRATION ====================
+
+# Stripe - Payment processing and webhook verification
+stripe>=7.0.0
+
+# ==================== TELEGRAM INTEGRATION ====================
+
+# Telegram Bot API (for alerts in automation engine)
+python-telegram-bot>=20.0  # Optional - Advanced bot features
+# Note: For basic sendMessage, only requests library needed (already included)
 
 # Google Sheets API for report export
 gspread>=5.11.0

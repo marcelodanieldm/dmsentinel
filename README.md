@@ -264,7 +264,190 @@ print(f"Score promedio: {trends['statistics']['average_score']}")
 
 ---
 
-## 🌐 Sentinel Automation Engine
+## 🔗 Automation Engine v3.0
+
+Sistema de webhooks empresarial con arquitectura no bloqueante y seguridad avanzada.
+
+### 🎯 Características Principales
+
+#### ✅ Arquitectura No Bloqueante
+- **Threading asíncrono**: Respuesta a webhooks en < 100ms
+- **Ejecución en background**: Auditorías no bloquean el servidor
+- **Alta concurrencia**: Múltiples auditorías simultáneas
+- **Sin timeouts**: Previene reintentos innecesarios de Stripe
+
+#### ✅ Validación de Identidad
+- **Firma criptográfica**: `stripe.Webhook.construct_event`
+- **Verificación HMAC SHA-256**: 100% seguro contra suplantación
+- **Protección contra replay attacks**: Timestamps verificados
+
+#### ✅ Lógica de Negocio por Plan
+
+| Plan | Análisis DNS | Análisis Forms | Análisis Cookies | Umbral Alerta | Profundidad |
+|------|--------------|----------------|------------------|---------------|-------------|
+| **Lite** | ❌ | ❌ | ❌ | < 60 | Básico |
+| **Corporate** | ✅ | ✅ | ✅ | < 70 | Completo |
+
+#### ✅ UX de Administración Mejorada
+- **MarkdownV2**: Formato visual profesional en Telegram
+- **Botones interactivos**: Ver reporte, contactar cliente, abrir sitio
+- **Iconos de estado**: 🔴 Crítico, 🟠 Alto Riesgo, 🟡 Advertencia
+- **Top 3 vulnerabilidades**: Resumen ejecutivo instantáneo
+
+#### ✅ Trazabilidad Forense
+- **Session ID tracking**: De Stripe a logs y reportes
+- **Logs estructurados**: Búsqueda rápida por sesión
+- **Cruceo contable**: Liga pagos con hallazgos técnicos
+- **Archivos nominados**: `report_{session_id}.json`
+
+### 🚀 Configuración Rápida
+
+```bash
+# 1. Instalar dependencias
+pip install stripe>=7.0.0
+
+# 2. Configurar variables de entorno
+export STRIPE_API_KEY="sk_live_..."
+export STRIPE_WEBHOOK_SECRET="whsec_..."
+export TELEGRAM_BOT_TOKEN="123456789:ABC..."
+export TELEGRAM_CHAT_ID="123456789"
+
+# 3. Iniciar servidor
+python sentinelautomationengine.py
+```
+
+### 📡 Endpoints Disponibles
+
+```
+POST /webhooks/stripe           # Webhook producción (firma verificada)
+POST /webhooks/stripe/test      # Webhook desarrollo (sin verificación)
+GET  /health                    # Health check
+GET  /                          # API info
+```
+
+### 🧪 Testing Local
+
+**Opción 1: Endpoint de prueba**
+```bash
+curl -X POST http://localhost:5000/webhooks/stripe/test \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_url": "https://example.com",
+    "client_email": "cliente@empresa.com",
+    "plan_id": "corporate",
+    "lang": "es"
+  }'
+```
+
+**Opción 2: Stripe CLI**
+```bash
+stripe listen --forward-to http://localhost:5000/webhooks/stripe
+stripe trigger checkout.session.completed
+```
+
+**Opción 3: Script de prueba**
+```bash
+python test_webhooks.py
+```
+
+### 🔧 Configuración de Metadata en Stripe
+
+Al crear sesión de checkout, incluir metadata:
+
+```python
+import stripe
+
+session = stripe.checkout.Session.create(
+    payment_method_types=['card'],
+    line_items=[{'price': 'price_...', 'quantity': 1}],
+    mode='payment',
+    success_url='https://tusitio.com/success',
+    
+    # ⭐ Metadata requerida para DM Sentinel
+    metadata={
+        'target_url': 'https://cliente-sitio.com',  # REQUERIDO
+        'plan_id': 'corporate',                     # lite o corporate
+        'lang': 'es',                               # es, en, fr, pt, eo
+    }
+)
+```
+
+### 📱 Notificación Telegram Mejorada
+
+```
+🔴 ALERTA DM SENTINEL 🔴
+━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Target: https://cliente-sitio.com
+📧 Cliente: cliente@empresa.com
+📦 Plan: CORPORATE
+🔍 Session ID: cs_test_abc123
+
+📊 RESULTADO DE AUDITORÍA
+├─ Score: 45/100
+├─ Estado: CRÍTICO
+└─ Vulnerabilidades: 12
+
+⚠️ Top Vulnerabilidades:
+  1. WordPress desactualizado v5.8 [HIGH]
+  2. Plugin vulnerable Contact Form 7 [CRITICAL]
+  3. Cabecera HSTS ausente [MEDIUM]
+  ... y 9 más
+
+━━━━━━━━━━━━━━━━━━━━━━
+⏰ 2026-03-11 14:35:22
+🛡️ DM Sentinel v3.0
+
+[📄 Ver Reporte] [📧 Contactar] [🔗 Sitio]
+```
+
+### 📊 Flujo de Automatización
+
+```
+1. Cliente paga → Stripe checkout.session.completed
+2. Stripe envía webhook con firma HMAC
+3. DM Sentinel verifica firma (construct_event)
+4. Extrae metadata: target_url, plan_id, client_email
+5. Inicia thread asíncrono para auditoría
+6. Responde 200 OK a Stripe (< 100ms)
+7. [Thread] Ejecuta auditoría según plan
+8. [Thread] Calcula score, detecta vulnerabilidades
+9. [Thread] Si score < umbral → Alerta Telegram
+10. [Thread] Guarda reporte con session_id
+11. [Thread] Registra en historial SQLite
+```
+
+### 📝 Logs con Trazabilidad Forense
+
+```log
+[2026-03-11 14:35:20] [INFO] [Session: cs_abc123] Webhook recibido de Stripe
+[2026-03-11 14:35:20] [INFO] [Session: cs_abc123] Webhook verificado exitosamente
+[2026-03-11 14:35:20] [INFO] [Session: cs_abc123] Thread iniciado | ID: 12345
+[2026-03-11 14:35:35] [INFO] [Session: cs_abc123] Auditoría completada | Score: 45
+[2026-03-11 14:35:36] [WARNING] [Session: cs_abc123] Alerta enviada a Telegram
+[2026-03-11 14:35:37] [INFO] [Session: cs_abc123] Reporte guardado
+```
+
+**Buscar por session**:
+```bash
+grep "cs_abc123" sentinel_automation.log
+```
+
+### 🔐 Seguridad en Producción
+
+✅ **Checklist**:
+- Usar `STRIPE_WEBHOOK_SECRET` real de producción
+- Habilitar solo HTTPS (SSL/TLS)
+- Deshabilitar endpoint `/webhooks/stripe/test`
+- Configurar firewall (whitelist IPs de Stripe)
+- Rotar tokens periódicamente
+- Monitorear intentos fallidos
+
+📚 **Documentación Completa**: Ver [WEBHOOK_GUIDE.md](WEBHOOK_GUIDE.md)
+
+---
+
+## 🌐 Sentinel Automation Engine (Legacy)
 
 Integración con Webhooks para auditorías automáticas tras pagos:
 
