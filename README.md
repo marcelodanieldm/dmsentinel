@@ -447,6 +447,194 @@ grep "cs_abc123" sentinel_automation.log
 
 ---
 
+## 📊 Sprint 3: Google Sheets CRM & Persistencia
+
+Sistema de persistencia centralizado que transforma DM Sentinel en una plataforma completa de gestión del ciclo de vida del cliente.
+
+### 🎯 Arquitectura del Sistema
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              STRIPE PAYMENT WEBHOOK                          │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│         AUTOMATION ENGINE (Non-blocking Thread)              │
+│                                                              │
+│  [1] log_sale() → CRM_LEADS (Status: Iniciando)            │
+│  [2] DMSentinelAuditor.run_scan()                          │
+│  [3] log_audit() → AUDIT_LOGS (Technical Results)          │
+│  [4] update_sale_status() → CRM_LEADS (Status: Completado) │
+│  [5] send_telegram_alert() → Admin Notification            │
+└─────────────────────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 GOOGLE SHEETS SPREADSHEET                    │
+│                                                              │
+│  📋 CRM_LEADS (Sales & Customer Lifecycle)                  │
+│     - Fecha, Cliente, Email, Plan, Monto, SessionID         │
+│     - Status, Target URL, Language                          │
+│                                                              │
+│  🔍 AUDIT_LOGS (Technical Results & Metrics)                │
+│     - SessionID, Score, Grade, Risk Level                   │
+│     - Vulnerabilities (Critical, High, Medium, Low)         │
+│     - Duration, Conditional Formatting by Score             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### ✨ Características Principales
+
+#### 📋 CRM_LEADS (Hoja de Ventas)
+
+| Campo | Descripción | Ejemplo |
+|-------|-------------|---------|
+| **Fecha** | Timestamp de inicio | 2026-03-11 14:32:15 |
+| **Cliente** | Nombre extraído del email | johndoe |
+| **Email** | Email del cliente | johndoe@example.com |
+| **Plan** | Plan contratado (Lite/Corporate) | CORPORATE |
+| **SessionID** | Session ID de Stripe (PK) | cs_test_abc123def456 |
+| **Status** | Estado actual | 🟢 Completado |
+
+**Estados de Lifecycle:**
+- 🟡 `Iniciando` - Pago recibido, auditoría en cola
+- 🟢 `Completado` - Auditoría finalizada exitosamente
+- 🔴 `Error` - Auditoría falló o timeout
+
+#### 🔍 AUDIT_LOGS (Hoja Técnica)
+
+| Campo | Descripción | Ejemplo |
+|-------|-------------|---------|
+| **SessionID** | Session ID de Stripe (FK) | cs_test_abc123def456 |
+| **Score** | Security score (0-100) | 72 |
+| **Grade** | Calificación letra | B |
+| **Risk Level** | Nivel de riesgo | MEDIO |
+| **Critical** | Vulnerabilidades críticas | 0 |
+| **High** | Vulnerabilidades altas | 2 |
+| **Duration** | Duración de la auditoría (s) | 23.45 |
+
+**Formato Visual Automático:**
+- Score ≥ 70: 🟢 Fondo verde claro (seguro)
+- Score 50-69: 🟡 Fondo amarillo claro (riesgo medio)
+- Score < 50: 🔴 Fondo rojo claro (riesgo alto)
+
+### 🔐 Configuración Rápida
+
+```bash
+# 1. Instalar dependencias
+pip install gspread google-auth google-auth-oauthlib google-auth-httplib2
+
+# 2. Crear Service Account en Google Cloud Console
+# - Habilitar Google Sheets API y Google Drive API
+# - Crear Service Account: dm-sentinel-bot
+# - Descargar credentials.json
+
+# 3. Configurar variables de entorno
+export GOOGLE_SPREADSHEET_ID="1Abc2Def3Ghi4Jkl5Mno6Pqr7Stu8Vwx9Yz0"
+export GOOGLE_CREDENTIALS_PATH="credentials.json"
+
+# 4. Compartir spreadsheet con Service Account email:
+# dm-sentinel-bot@dm-sentinel-prod-XXXXXX.iam.gserviceaccount.com
+
+# 5. Test de integración
+python sheets_manager.py
+```
+
+### 🔄 Flujo de Datos Completo
+
+```python
+# Cliente paga en Stripe → Webhook → Background Thread ejecuta:
+
+# [1] Registro en CRM
+log_sale(
+    session_id="cs_test_abc123",
+    client_email="johndoe@example.com",
+    plan_id="corporate",
+    status="Iniciando"
+)
+
+# [2] Ejecución de auditoría
+auditor = DMSentinelAuditor(target_url, ...)
+report = auditor.run_scan()
+
+# [3] Registro técnico
+log_audit(
+    session_id="cs_test_abc123",
+    target_url="https://example.com",
+    audit_report=report,
+    duration=23.45
+)
+
+# [4] Actualización de status
+update_sale_status(session_id="cs_test_abc123", status="Completado")
+
+# [5] Notificación Telegram
+auditor.send_telegram_alert()
+```
+
+### 🛡️ Arquitectura Resiliente
+
+**Principio de No Bloqueo**: Fallos en Google Sheets NO detienen el flujo crítico.
+
+✅ **Sheets falla** → Telegram se envía igual (alertas nunca se pierden)  
+✅ **Auditoría falla** → Status en CRM se actualiza a "Error"  
+✅ **Logs forenses** → session_id tracking en TODAS las operaciones  
+
+### 📊 API del Sheets Manager
+
+```python
+from sheets_manager import SheetsManager
+
+manager = SheetsManager()
+
+# Registrar venta
+manager.log_sale(session_id, client_email, plan_id, ...)
+
+# Registrar auditoría
+manager.log_audit(session_id, target_url, audit_report, duration)
+
+# Actualizar status
+manager.update_sale_status(session_id, "Completado")
+
+# Obtener historial de cliente
+history = manager.get_client_history("client@example.com")
+
+# Estadísticas
+stats = manager.get_stats()
+# → {'total_sales': 150, 'completed_sales': 142, 'average_score': 68.5}
+```
+
+### 🧪 Testing End-to-End
+
+```bash
+# Test standalone
+python sheets_manager.py
+
+# Test con webhook simulado
+curl -X POST http://localhost:5000/webhooks/stripe/test \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_url": "https://example.com",
+    "client_email": "test@dmglobal.com",
+    "plan_id": "corporate",
+    "session_id": "test_manual_001"
+  }'
+
+# Verificar en Google Sheets:
+# → Nueva fila en CRM_LEADS con status "Completado"
+# → Nueva fila en AUDIT_LOGS con resultados
+```
+
+### 📖 Documentación Completa
+
+- 📘 **Guía completa**: [GOOGLE_SHEETS_GUIDE.md](GOOGLE_SHEETS_GUIDE.md)
+- 🔐 **Seguridad**: Service Account setup, rotación de keys, permisos
+- 🐛 **Troubleshooting**: SpreadsheetNotFound, APIError, quotas exceeded
+- 📊 **Dashboards**: Exportar a Data Studio, Power BI, Excel
+
+---
+
 ## 🌐 Sentinel Automation Engine (Legacy)
 
 Integración con Webhooks para auditorías automáticas tras pagos:

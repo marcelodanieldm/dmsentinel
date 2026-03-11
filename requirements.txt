@@ -33,14 +33,15 @@ stripe>=7.0.0
 python-telegram-bot>=20.0  # Optional - Advanced bot features
 # Note: For basic sendMessage, only requests library needed (already included)
 
-# Google Sheets API for report export
-gspread>=5.11.0
-oauth2client>=4.1.3
+# ==================== GOOGLE SHEETS CRM & LOGGING ====================
 
-# Alternative: google-auth if oauth2client deprecated
-# google-auth>=2.23.0
-# google-auth-oauthlib>=1.1.0
-# google-auth-httplib2>=0.1.1
+# Google Sheets API for CRM and audit logging (Sprint 3)
+gspread>=6.0.0
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+
+# Note: oauth2client is deprecated, use google-auth instead
 
 # ==================== PDF REPORT GENERATION ====================
 

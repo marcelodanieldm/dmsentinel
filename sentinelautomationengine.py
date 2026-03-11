@@ -370,20 +370,72 @@ class DMSentinelAuditor:
 
 
 
+# ============= GOOGLE SHEETS INTEGRATION =============
+
+try:
+    from sheets_manager import log_sale, update_sale_status, log_audit
+    SHEETS_AVAILABLE = True
+except ImportError:
+    SHEETS_AVAILABLE = False
+    # Fallback stubs if sheets_manager not available
+    def log_sale(*args, **kwargs):
+        return False
+    def update_sale_status(*args, **kwargs):
+        return False
+    def log_audit(*args, **kwargs):
+        return False
+
+
 # ============= BACKGROUND AUDIT EXECUTOR =============
 
 def execute_audit_async(target_url: str, client_email: str, plan_id: str,
                        lang: str, session_id: str):
     """
-    Ejecuta auditoría en background thread (arquitectura no bloqueante).
+    Ejecuta auditoría en background thread con integración completa del ciclo de vida.
+    
+    FLUJO (Sprint 3 - Data Sync):
+    1. Registro inicial en CRM (Status: 'Iniciando')
+    2. Ejecución de auditoría
+    3. Registro en AUDIT_LOGS (técnico)
+    4. Actualización de status en CRM a 'Completado'
+    5. Envío de notificación Telegram (NO bloqueante aunque Sheets falle)
+    
     Esta función se ejecuta en un thread separado para no bloquear el webhook.
     """
+    start_time = time.time()
+    
     logger = logging.LoggerAdapter(
         logging.getLogger(__name__),
         {'session_id': session_id}
     )
     
     logger.info(f"[THREAD] Iniciando auditoría asíncrona | Target: {target_url} | Plan: {plan_id}")
+    
+    # ===== PASO 1: REGISTRO EN CRM (Status: 'Iniciando') =====
+    
+    if SHEETS_AVAILABLE:
+        try:
+            logger.info("[SHEETS] Registrando venta en CRM_LEADS...")
+            log_sale(
+                session_id=session_id,
+                client_email=client_email,
+                plan_id=plan_id,
+                amount=0.0,  # Stripe ya procesó el pago, aquí es solo tracking
+                currency="USD",
+                target_url=target_url,
+                language=lang,
+                status="Iniciando"
+            )
+            logger.info("[SHEETS] ✓ Venta registrada en CRM con status 'Iniciando'")
+        except Exception as e:
+            logger.error(f"[SHEETS] Error registrando venta (no bloqueante): {e}")
+    else:
+        logger.debug("[SHEETS] Integración deshabilitada, skip log_sale")
+    
+    # ===== PASO 2: EJECUCIÓN DE AUDITORÍA =====
+    
+    report = None
+    audit_duration = 0.0
     
     try:
         auditor = DMSentinelAuditor(
@@ -395,10 +447,37 @@ def execute_audit_async(target_url: str, client_email: str, plan_id: str,
         )
         
         report = auditor.run_scan()
+        audit_duration = time.time() - start_time
         
-        logger.info(f"[THREAD] Auditoría completada | Score: {report.get('summary', {}).get('security_score', 'N/A')}")
+        score = report.get('summary', {}).get('security_score', 'N/A')
+        logger.info(f"[THREAD] ✓ Auditoría completada | Score: {score} | Duración: {audit_duration:.2f}s")
         
-        # Aquí se puede integrar con Google Sheets, PDF generation, etc.
+        # ===== PASO 3: REGISTRO EN AUDIT_LOGS (Técnico) =====
+        
+        if SHEETS_AVAILABLE and report:
+            try:
+                logger.info("[SHEETS] Registrando resultados en AUDIT_LOGS...")
+                log_audit(
+                    session_id=session_id,
+                    target_url=target_url,
+                    audit_report=report,
+                    duration=audit_duration
+                )
+                logger.info("[SHEETS] ✓ Auditoría registrada en AUDIT_LOGS")
+            except Exception as e:
+                logger.error(f"[SHEETS] Error registrando auditoría (no bloqueante): {e}")
+        
+        # ===== PASO 4: ACTUALIZACIÓN DE STATUS EN CRM a 'Completado' =====
+        
+        if SHEETS_AVAILABLE:
+            try:
+                logger.info("[SHEETS] Actualizando status en CRM_LEADS a 'Completado'...")
+                update_sale_status(session_id=session_id, status="Completado")
+                logger.info("[SHEETS] ✓ Status actualizado a 'Completado'")
+            except Exception as e:
+                logger.error(f"[SHEETS] Error actualizando status (no bloqueante): {e}")
+        
+        # Historical tracking (optional, backward compatibility)
         try:
             from sentinel_history import save_scan_to_history
             scan_id = save_scan_to_history(report, language=lang)
@@ -406,10 +485,29 @@ def execute_audit_async(target_url: str, client_email: str, plan_id: str,
         except ImportError:
             logger.debug("[THREAD] sentinel_history no disponible, skip historical tracking")
         
+        # ===== PASO 5: ENVÍO DE NOTIFICACIÓN TELEGRAM =====
+        # CRÍTICO: Telegram NO debe bloquearse si Sheets falla (arquitectura resiliente)
+        
+        try:
+            logger.info("[TELEGRAM] Enviando notificación de auditoría...")
+            auditor.send_telegram_alert()
+            logger.info("[TELEGRAM] ✓ Notificación enviada")
+        except Exception as e:
+            logger.error(f"[TELEGRAM] Error enviando notificación (no bloqueante): {e}", exc_info=True)
+        
         return report
     
     except Exception as e:
         logger.error(f"[THREAD] Error en auditoría asíncrona: {e}", exc_info=True)
+        
+        # Update CRM status to 'Error' even if audit fails
+        if SHEETS_AVAILABLE:
+            try:
+                update_sale_status(session_id=session_id, status="Error")
+                logger.info("[SHEETS] Status actualizado a 'Error' debido a fallo en auditoría")
+            except Exception as update_error:
+                logger.error(f"[SHEETS] No se pudo actualizar status a Error: {update_error}")
+        
         return None
 
 
