@@ -262,5 +262,204 @@
       "cvss_score": 7.0,
       "score_impact": -20
     }
+  },
+  "dns_email_security": {
+    "missing_spf": {
+      "severity": "HIGH",
+      "description": "Missing SPF record - Domain vulnerable to email spoofing",
+      "cvss_score": 7.5,
+      "score_impact": -25,
+      "attack_vector": "Email spoofing, phishing campaigns",
+      "prevalence": "2025 - 40% of SMBs lack SPF records"
+    },
+    "weak_spf": {
+      "severity": "MEDIUM",
+      "description": "Weak SPF policy configuration (too permissive)",
+      "cvss_score": 5.5,
+      "score_impact": -15,
+      "attack_vector": "Reduced email authentication effectiveness"
+    },
+    "missing_dmarc": {
+      "severity": "HIGH",
+      "description": "Missing DMARC record - No email authentication policy enforcement",
+      "cvss_score": 7.0,
+      "score_impact": -25,
+      "attack_vector": "Email impersonation, brand abuse",
+      "prevalence": "2025 - 60% of domains without DMARC"
+    },
+    "dmarc_policy_none": {
+      "severity": "MEDIUM",
+      "description": "DMARC policy set to 'none' - Monitoring only, no enforcement",
+      "cvss_score": 4.5,
+      "score_impact": -10,
+      "attack_vector": "Limited protection against spoofing"
+    },
+    "missing_dkim": {
+      "severity": "MEDIUM",
+      "description": "No DKIM infrastructure detected",
+      "cvss_score": 5.0,
+      "score_impact": -10,
+      "attack_vector": "Email integrity cannot be verified"
+    },
+    "mx_misconfiguration": {
+      "severity": "HIGH",
+      "description": "MX records misconfigured or missing",
+      "cvss_score": 6.5,
+      "score_impact": -20,
+      "attack_vector": "Email delivery failures, potential interception"
+    }
+  },
+  "cookie_security": {
+    "missing_secure_flag": {
+      "severity": "HIGH",
+      "description": "Session cookie missing Secure flag - Can be transmitted over HTTP",
+      "cvss_score": 7.5,
+      "score_impact": -25,
+      "attack_vector": "Session hijacking via network sniffing",
+      "prevalence": "2025 - Common in legacy applications"
+    },
+    "missing_httponly_flag": {
+      "severity": "HIGH",
+      "description": "Cookie missing HttpOnly flag - Accessible via JavaScript",
+      "cvss_score": 7.2,
+      "score_impact": -25,
+      "attack_vector": "XSS attacks can steal session tokens",
+      "cwe": "CWE-1004: Sensitive Cookie Without HttpOnly Flag"
+    },
+    "missing_samesite_flag": {
+      "severity": "MEDIUM",
+      "description": "Cookie missing SameSite attribute - CSRF risk",
+      "cvss_score": 5.8,
+      "score_impact": -15,
+      "attack_vector": "Cross-Site Request Forgery (CSRF)",
+      "cwe": "CWE-352: Cross-Site Request Forgery"
+    },
+    "insecure_cookie_domain": {
+      "severity": "MEDIUM",
+      "description": "Cookie domain too permissive (wildcard subdomain)",
+      "cvss_score": 5.0,
+      "score_impact": -10,
+      "attack_vector": "Subdomain takeover leading to cookie theft"
+    }
+  },
+  "http_methods": {
+    "put_enabled": {
+      "severity": "HIGH",
+      "description": "HTTP PUT method enabled without authentication",
+      "cvss_score": 8.2,
+      "score_impact": -30,
+      "attack_vector": "Arbitrary file upload/modification",
+      "cwe": "CWE-650: Trusting HTTP Permission Methods"
+    },
+    "delete_enabled": {
+      "severity": "HIGH",
+      "description": "HTTP DELETE method enabled without authentication",
+      "cvss_score": 8.0,
+      "score_impact": -30,
+      "attack_vector": "Unauthorized resource deletion",
+      "cwe": "CWE-650: Trusting HTTP Permission Methods"
+    },
+    "trace_enabled": {
+      "severity": "MEDIUM",
+      "description": "HTTP TRACE method enabled - Cross-Site Tracing (XST) risk",
+      "cvss_score": 5.5,
+      "score_impact": -15,
+      "attack_vector": "XST attacks, cookie theft via HTTP headers",
+      "cve_reference": "CVE-2004-2763"
+    },
+    "connect_enabled": {
+      "severity": "MEDIUM",
+      "description": "HTTP CONNECT method enabled",
+      "cvss_score": 5.0,
+      "score_impact": -15,
+      "attack_vector": "Potential proxy abuse"
+    }
+  },
+  "form_vulnerabilities": {
+    "http_form_submission": {
+      "severity": "CRITICAL",
+      "description": "Form submits data over unencrypted HTTP connection",
+      "cvss_score": 9.3,
+      "score_impact": -40,
+      "attack_vector": "Credentials/PII transmitted in cleartext, MITM attacks",
+      "cwe": "CWE-319: Cleartext Transmission of Sensitive Information"
+    },
+    "get_method_sensitive": {
+      "severity": "HIGH",
+      "description": "Sensitive data transmitted via GET method (visible in logs/history)",
+      "cvss_score": 7.5,
+      "score_impact": -25,
+      "attack_vector": "Data leakage via browser history, server logs, referer headers",
+      "cwe": "CWE-598: Use of GET Request Method With Sensitive Query Strings"
+    },
+    "missing_csrf_token": {
+      "severity": "HIGH",
+      "description": "Form missing CSRF protection token",
+      "cvss_score": 7.1,
+      "score_impact": -25,
+      "attack_vector": "Cross-Site Request Forgery attacks",
+      "cwe": "CWE-352: Cross-Site Request Forgery",
+      "prevalence": "2025 - Still found in 30% of web forms"
+    },
+    "unrestricted_file_upload": {
+      "severity": "CRITICAL",
+      "description": "File upload input without type restrictions",
+      "cvss_score": 9.8,
+      "score_impact": -40,
+      "attack_vector": "Remote Code Execution via malicious file upload (PHP shell, etc.)",
+      "cwe": "CWE-434: Unrestricted Upload of File with Dangerous Type",
+      "owasp": "A03:2021 - Injection"
+    },
+    "autocomplete_enabled_sensitive": {
+      "severity": "MEDIUM",
+      "description": "Autocomplete enabled on sensitive fields (passwords, credit cards)",
+      "cvss_score": 5.3,
+      "score_impact": -10,
+      "attack_vector": "Credential theft via browser autocomplete cache",
+      "cwe": "CWE-525: Use of Web Browser Cache Containing Sensitive Information"
+    },
+    "no_input_validation": {
+      "severity": "HIGH",
+      "description": "Form lacks client-side input validation",
+      "cvss_score": 6.5,
+      "score_impact": -20,
+      "attack_vector": "SQL injection, XSS, command injection",
+      "note": "Client-side validation should complement server-side, not replace it"
+    }
+  },
+  "server_misconfig": {
+    "cors_misconfiguration": {
+      "severity": "HIGH",
+      "description": "Overly permissive CORS policy (Access-Control-Allow-Origin: *)",
+      "cvss_score": 7.5,
+      "score_impact": -25,
+      "attack_vector": "Cross-origin data theft, API abuse",
+      "cwe": "CWE-942: Overly Permissive Cross-domain Whitelist",
+      "prevalence": "2025 - Common in API endpoints"
+    },
+    "server_banner_disclosure": {
+      "severity": "LOW",
+      "description": "Server version information disclosed in HTTP headers",
+      "cvss_score": 3.5,
+      "score_impact": -5,
+      "attack_vector": "Information disclosure aids targeted attacks",
+      "cwe": "CWE-200: Exposure of Sensitive Information"
+    },
+    "directory_listing_enabled": {
+      "severity": "MEDIUM",
+      "description": "Directory listing enabled on web server",
+      "cvss_score": 5.3,
+      "score_impact": -15,
+      "attack_vector": "Information disclosure, file enumeration",
+      "cwe": "CWE-548: Directory Indexing"
+    },
+    "php_errors_exposed": {
+      "severity": "MEDIUM",
+      "description": "PHP errors and warnings exposed to users",
+      "cvss_score": 5.0,
+      "score_impact": -10,
+      "attack_vector": "Path disclosure, sensitive information leakage",
+      "cwe": "CWE-209: Generation of Error Message Containing Sensitive Information"
+    }
   }
 }
