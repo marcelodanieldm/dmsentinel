@@ -681,18 +681,65 @@ Soporte completo en **5 idiomas**:
 - 🇧🇷 Português (pt)
 - 🌐 Esperanto (eo)
 
+#### 📧 Email Delivery (Sprint 4 Final)
+
+Sistema profesional de entrega de reportes por correo electrónico:
+
+**Características:**
+- ✉️ **HTML Email Templates** con branding corporativo DM Global
+- 📎 **PDF Attachment** automático del reporte completo
+- 🌐 **Multi-idioma** (plantillas en 5 idiomas)
+- 🔒 **TLS Encryption** via SMTP (puerto 587)
+- 🎨 **Diseño responsive** con colores corporativos
+- 📊 **Score badge visual** prominente en el email
+
+**Contenido del Email:**
+- Saludo personalizado con nombre del cliente
+- Security Score destacado con colores (verde/amarillo/rojo)
+- Resumen de contenido del PDF adjunto
+- Información de contacto y session ID para trazabilidad
+- Footer con branding DM Global
+
+**Configuración SMTP:**
+
+```bash
+# Variables de entorno requeridas
+export SMTP_HOST='smtp.gmail.com'
+export SMTP_PORT='587'
+export SMTP_USER='your-email@gmail.com'
+export SMTP_PASSWORD='your-app-password'
+export SMTP_FROM_EMAIL='security@dmglobal.com'
+export SMTP_FROM_NAME='DM Global Security'
+```
+
+**Proveedores SMTP Soportados:**
+- ✅ Gmail (recomendado con App Password)
+- ✅ Office 365 / Outlook
+- ✅ SendGrid
+- ✅ Amazon SES
+- ✅ Cualquier servidor SMTP con TLS
+
+**Gmail App Password Setup:**
+1. Ir a [Google Account Settings](https://myaccount.google.com)
+2. Seguridad → Verificación en 2 pasos (habilitarla)
+3. Contraseñas de aplicación → Generar nueva
+4. Copiar password → Usar en `SMTP_PASSWORD`
+
 ### 🔄 Integración en Workflow
 
-El PDF se genera automáticamente en el **Paso 3.5** del flujo de automatización:
+El flujo completo incluye generación de PDF **y envío automático por email** al cliente:
 
 ```
 1. log_sale() → CRM_LEADS (Status: Iniciando)
 2. run_scan() → Ejecución de auditoría
 3. log_audit() → AUDIT_LOGS (Technical results)
-3.5. generate_pdf_report() → /reports/reporte_[session_id].pdf  ⭐ NUEVO
+3.5. generate_pdf_report() → /reports/reporte_[session_id].pdf  ⭐
+3.7. send_email() → Email al cliente con PDF adjunto  ⭐ NUEVO
 4. update_sale_status() → CRM_LEADS (Status: Completado)
-5. send_telegram_alert() → Notificación + PDF adjunto  ⭐ NUEVO
+5. send_telegram_alert() → Notificación admin + PDF adjunto
 ```
+
+**Resultado:** Cliente recibe email profesional con PDF en **< 2 minutos** desde el pago.
 
 ### 📁 Estructura de Archivos
 
@@ -709,28 +756,61 @@ reports/
 
 ### 🔧 Configuración
 
-```bash
-# 1. Instalar dependencia
-pip install fpdf2>=2.7.0
+**Dependencia PDF:**
 
-# 2. El sistema está listo
-# No requiere configuración adicional
-# Los PDFs se generan automáticamente en cada auditoría
+```bash
+pip install fpdf2>=2.7.0
 ```
+
+**Variables de entorno Email (Opcional):**
+
+```bash
+# Windows PowerShell
+$env:SMTP_USER='security@dmglobal.com'
+$env:SMTP_PASSWORD='your-app-password'
+$env:SMTP_HOST='smtp.gmail.com'
+$env:SMTP_PORT='587'
+
+# Linux/Mac
+export SMTP_USER='security@dmglobal.com'
+export SMTP_PASSWORD='your-app-password'
+export SMTP_HOST='smtp.gmail.com'
+export SMTP_PORT='587'
+```
+
+**Nota:** Si no se configuran las variables SMTP, el sistema genera el PDF y envía notificación Telegram, pero no envía email al cliente.
 
 ### 🧪 Testing
 
-**Test standalone de PDF Generator:**
+**Test 1: PDF Generator (standalone)**
 
 ```powershell
 python test_sprint4.py
 ```
 
 Genera 9 PDFs de prueba:
-- 3 niveles de score (Critical, Good, Perfect)
+- 3 niveles de score (Critical 35/100, Good 85/100, Perfect 98/100)
 - 3 idiomas cada uno (es, en, fr)
+- Output: `reports/reporte_*.pdf`
 
-**Test de integración completa:**
+**Test 2: Email Delivery (standalone)**
+
+```powershell
+# Configure SMTP first
+$env:SMTP_USER='your-email@gmail.com'
+$env:SMTP_PASSWORD='your-app-password'
+
+# Run email test
+python test_email.py
+```
+
+Tests realizados:
+- ✅ SMTP connection validation
+- ✅ Single email delivery with PDF attachment
+- ✅ Multi-language email templates (optional)
+- ✅ Interactive custom email test (optional)
+
+**Test 3: Integración completa (End-to-End)**
 
 ```powershell
 # Terminal 1
@@ -841,13 +921,24 @@ Stripe envía webhook → sentinelautomationengine.py
     • Tabla de 12 vulnerabilidades con colores
     • Plan de mitigación técnico en español
     ↓
+[PASO 3.7] send_email() → Email al cliente (client@example.com)  ⭐ NUEVO
+    • Subject: 🛡️ Tu Reporte de Seguridad - DM Sentinel
+    • HTML email con branding DM Global
+    • PDF adjunto: reporte_cs_abc123.pdf
+    • Tiempo de entrega: < 5 segundos
+    ↓
 [PASO 4] update_sale_status() → Google Sheets (Status: Completado)
     ↓
-[PASO 5] send_telegram_alert() → Notificación MarkdownV2
-         + PDF adjunto 📄 reporte_cs_abc123.pdf  ⭐
+[PASO 5] send_telegram_alert() → Notificación admin MarkdownV2
+         + PDF adjunto 📄 reporte_cs_abc123.pdf
 ```
 
-**Tiempo total**: < 2 minutos desde pago hasta reporte en Telegram
+**Tiempo total**: < 2 minutos desde pago hasta:
+- ✅ Reporte PDF en bandeja de entrada del cliente
+- ✅ Notificación admin en Telegram
+- ✅ Registros completos en Google Sheets
+
+**Resultado:** Cliente recibe servicio completo inmediatamente tras el pago 🚀
 
 ### 🛡️ Error Handling
 
@@ -862,6 +953,14 @@ if PDF_AVAILABLE and report:
         logger.error(f"[PDF] Error (no bloqueante): {e}")
         pdf_path = None  # Continue without PDF
 
+# Email delivery is NON-BLOCKING (NEW)
+if EMAIL_AVAILABLE and pdf_path:
+    try:
+        send_email(...)
+    except Exception as e:
+        logger.error(f"[EMAIL] Error (no bloqueante): {e}")
+        # Continue workflow
+
 # Telegram alert ALWAYS sent
 send_telegram_alert()  # GUARANTEED
 
@@ -872,15 +971,21 @@ if pdf_path:
 
 **Garantías:**
 
-✅ **PDF falla** → Auditoría continúa, Sheets actualizado, Telegram enviado  
-✅ **Telegram falla** → PDF generado y guardado localmente  
-✅ **Sheets falla** → PDF y Telegram funcionan independientemente  
+✅ **PDF falla** → Auditoría continúa, no se envía email, Sheets actualizado, Telegram enviado  
+✅ **Email falla** → PDF generado localmente, Sheets actualizado, Telegram enviado  
+✅ **Telegram falla** → PDF generado, Email enviado, Sheets actualizado  
+✅ **Sheets falla** → PDF, Email y Telegram funcionan independientemente  
+
+**Arquitectura no bloqueante:** Cada subsistema puede fallar sin afectar a los demás.
 
 ### 📖 Recursos
 
-- 📄 **Test script**: [test_sprint4.py](test_sprint4.py)
+- 📄 **Test PDF**: [test_sprint4.py](test_sprint4.py) - Generación de PDFs de prueba
+- 📧 **Test Email**: [test_email.py](test_email.py) - Validación de entrega de emails
 - 🎨 **PDF Generator**: [report_generator.py](report_generator.py) (850+ líneas)
+- ✉️ **Email Manager**: [email_manager.py](email_manager.py) (600+ líneas)
 - 📘 **FPDF2 Docs**: [pyfpdf.github.io/fpdf2](https://pyfpdf.github.io/fpdf2/)
+- 📬 **SMTP Guide**: Ver sección "Email Delivery Configuration" arriba
 
 ---
 

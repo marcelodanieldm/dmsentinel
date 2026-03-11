@@ -398,6 +398,17 @@ except ImportError:
         return False
 
 
+# ============= EMAIL DELIVERY SYSTEM =============
+
+try:
+    from email_manager import EmailManager
+    EMAIL_AVAILABLE = True
+except ImportError:
+    EMAIL_AVAILABLE = False
+    print("[!] email_manager not available. Set SMTP credentials in environment.")
+    EmailManager = None
+
+
 # ============= BACKGROUND AUDIT EXECUTOR =============
 
 def execute_audit_async(target_url: str, client_email: str, plan_id: str,
@@ -511,6 +522,47 @@ def execute_audit_async(target_url: str, client_email: str, plan_id: str,
                 pdf_path = None
         else:
             logger.debug("[PDF] Generación de PDF deshabilitada o reporte no disponible")
+        
+        # ===== PASO 3.7: ENVÍO DE EMAIL AL CLIENTE (Sprint 4 Final) =====
+        
+        if EMAIL_AVAILABLE and pdf_path and os.path.exists(pdf_path):
+            try:
+                logger.info(f"[EMAIL] Enviando reporte por correo a {client_email}...")
+                
+                # Extract client name from email (simple heuristic)
+                client_name = client_email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
+                
+                # Prepare report data for email template
+                report_data = {
+                    'score': score,
+                    'grade': report.get('summary', {}).get('grade', 'N/A'),
+                    'risk_level': report.get('summary', {}).get('risk_level', 'Unknown'),
+                    'target_url': target_url,
+                    'session_id': session_id
+                }
+                
+                # Send email with PDF attachment
+                email_manager = EmailManager()
+                email_success = email_manager.send_report(
+                    client_email=client_email,
+                    client_name=client_name,
+                    pdf_path=pdf_path,
+                    report_data=report_data,
+                    language=lang
+                )
+                
+                if email_success:
+                    logger.info(f"[EMAIL] ✓ Reporte enviado exitosamente a {client_email}")
+                else:
+                    logger.warning(f"[EMAIL] Error enviando reporte a {client_email} (no bloqueante)")
+            
+            except Exception as e:
+                logger.error(f"[EMAIL] Error en envío de email (no bloqueante): {e}")
+        else:
+            if not EMAIL_AVAILABLE:
+                logger.debug("[EMAIL] Sistema de email deshabilitado (SMTP no configurado)")
+            elif not pdf_path:
+                logger.debug("[EMAIL] No se envió email porque el PDF no fue generado")
         
         # ===== PASO 4: ACTUALIZACIÓN DE STATUS EN CRM a 'Completado' =====
         
