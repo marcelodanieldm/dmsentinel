@@ -386,6 +386,18 @@ except ImportError:
         return False
 
 
+# ============= PDF REPORT GENERATION =============
+
+try:
+    from report_generator import generate_pdf_report
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+    print("[!] report_generator not available. Run: pip install fpdf2")
+    def generate_pdf_report(*args, **kwargs):
+        return False
+
+
 # ============= BACKGROUND AUDIT EXECUTOR =============
 
 def execute_audit_async(target_url: str, client_email: str, plan_id: str,
@@ -467,6 +479,39 @@ def execute_audit_async(target_url: str, client_email: str, plan_id: str,
             except Exception as e:
                 logger.error(f"[SHEETS] Error registrando auditoría (no bloqueante): {e}")
         
+        # ===== PASO 3.5: GENERACIÓN DE PDF (Sprint 4) =====
+        
+        pdf_path = None
+        if PDF_AVAILABLE and report:
+            try:
+                # Ensure reports directory exists
+                reports_dir = "reports"
+                os.makedirs(reports_dir, exist_ok=True)
+                
+                # Generate PDF filename
+                pdf_filename = f"reporte_{session_id}.pdf"
+                pdf_path = os.path.join(reports_dir, pdf_filename)
+                
+                logger.info(f"[PDF] Generando reporte PDF: {pdf_filename}...")
+                
+                success = generate_pdf_report(
+                    audit_report=report,
+                    output_path=pdf_path,
+                    language=lang
+                )
+                
+                if success:
+                    logger.info(f"[PDF] ✓ Reporte PDF generado: {pdf_path}")
+                else:
+                    logger.warning("[PDF] Error generando PDF (no bloqueante)")
+                    pdf_path = None
+            
+            except Exception as e:
+                logger.error(f"[PDF] Error generando reporte PDF (no bloqueante): {e}")
+                pdf_path = None
+        else:
+            logger.debug("[PDF] Generación de PDF deshabilitada o reporte no disponible")
+        
         # ===== PASO 4: ACTUALIZACIÓN DE STATUS EN CRM a 'Completado' =====
         
         if SHEETS_AVAILABLE:
@@ -486,12 +531,37 @@ def execute_audit_async(target_url: str, client_email: str, plan_id: str,
             logger.debug("[THREAD] sentinel_history no disponible, skip historical tracking")
         
         # ===== PASO 5: ENVÍO DE NOTIFICACIÓN TELEGRAM =====
-        # CRÍTICO: Telegram NO debe bloquearse si Sheets falla (arquitectura resiliente)
+        # CRÍTICO: Telegram NO debe bloquearse si Sheets o PDF fallan (arquitectura resiliente)
         
         try:
             logger.info("[TELEGRAM] Enviando notificación de auditoría...")
             auditor.send_telegram_alert()
             logger.info("[TELEGRAM] ✓ Notificación enviada")
+            
+            # OPCIONAL: Enviar PDF como documento adjunto vía Telegram
+            if pdf_path and os.path.exists(pdf_path):
+                try:
+                    logger.info("[TELEGRAM] Enviando PDF como documento adjunto...")
+                    
+                    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
+                    
+                    with open(pdf_path, 'rb') as pdf_file:
+                        files = {'document': pdf_file}
+                        data = {
+                            'chat_id': TELEGRAM_CHAT_ID,
+                            'caption': f'📄 Reporte PDF - Session: {session_id}'
+                        }
+                        
+                        response = requests.post(url, files=files, data=data, timeout=30)
+                        
+                        if response.status_code == 200:
+                            logger.info("[TELEGRAM] ✓ PDF enviado como documento adjunto")
+                        else:
+                            logger.warning(f"[TELEGRAM] Error enviando PDF: {response.status_code}")
+                
+                except Exception as pdf_telegram_error:
+                    logger.error(f"[TELEGRAM] Error enviando PDF adjunto (no bloqueante): {pdf_telegram_error}")
+        
         except Exception as e:
             logger.error(f"[TELEGRAM] Error enviando notificación (no bloqueante): {e}", exc_info=True)
         

@@ -45,10 +45,14 @@ google-auth-httplib2>=0.1.1
 
 # ==================== PDF REPORT GENERATION ====================
 
-# ReportLab - Professional PDF generation with charts
-reportlab>=4.0.4
+# FPDF2 - Professional PDF generation with corporate branding (Sprint 4)
+fpdf2>=2.7.0
 
-# Alternative: WeasyPrint (HTML to PDF)
+# ReportLab - Alternative professional PDF generation with charts (v3.0 legacy)
+# reportlab>=4.0.4
+
+# WeasyPrint - HTML to PDF converter (optional alternative)
+# weasyprint>=60.0
 # weasyprint>=59.0
 # Note: WeasyPrint requires system dependencies (GTK, Pango, Cairo)
 

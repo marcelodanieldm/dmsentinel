@@ -635,6 +635,255 @@ curl -X POST http://localhost:5000/webhooks/stripe/test \
 
 ---
 
+## 📄 Sprint 4: Generación de Entregables PDF
+
+Sistema de generación de reportes PDF profesionales con branding corporativo y soporte multiidioma.
+
+### 🎯 Características Principales
+
+#### 🎨 Diseño Profesional
+- **Branding corporativo**: Colores DM Global (Cyan #00D4FF)
+- **Header y footer**: Identidad visual consistente
+- **Código de colores por severidad**:
+  - 🔴 **Critical**: Rojo (#DC2626)
+  - 🟠 **High**: Naranja (#F97316)
+  - 🟡 **Medium**: Amarillo (#EAB308)
+  - 🟢 **Low**: Verde (#22C55E)
+- **Score badge visual**: Círculo de color con grade badge
+- **Tablas profesionales**: Con formato condicional y zebra striping
+
+#### 📊 Secciones del Reporte
+
+**1. Executive Summary (Resumen Ejecutivo)**
+- Target information (URL, fecha, session ID)
+- Security score badge prominente
+- Vulnerability summary por severidad
+- Recommendation basada en score
+
+**2. Detailed Findings (Hallazgos Detallados)**
+- Tabla completa de vulnerabilidades
+- Color coding por severidad
+- Categorías y descripción de impacto
+- Multi-page handling automático
+
+**3. Technical Mitigation Plan (Plan de Mitigación)**
+- Agrupado por prioridad (Critical → High → Medium → Low)
+- Descripción de cada vulnerabilidad
+- Recomendaciones técnicas de remediación
+- Comandos y configuraciones específicas
+
+#### 🌍 Internacionalización
+
+Soporte completo en **5 idiomas**:
+- 🇪🇸 Español (es)
+- 🇬🇧 English (en)
+- 🇫🇷 Français (fr)
+- 🇧🇷 Português (pt)
+- 🌐 Esperanto (eo)
+
+### 🔄 Integración en Workflow
+
+El PDF se genera automáticamente en el **Paso 3.5** del flujo de automatización:
+
+```
+1. log_sale() → CRM_LEADS (Status: Iniciando)
+2. run_scan() → Ejecución de auditoría
+3. log_audit() → AUDIT_LOGS (Technical results)
+3.5. generate_pdf_report() → /reports/reporte_[session_id].pdf  ⭐ NUEVO
+4. update_sale_status() → CRM_LEADS (Status: Completado)
+5. send_telegram_alert() → Notificación + PDF adjunto  ⭐ NUEVO
+```
+
+### 📁 Estructura de Archivos
+
+```
+reports/
+├── reporte_cs_live_abc123def456.pdf    # Cliente A (Corporate)
+├── reporte_cs_live_xyz789ghi012.pdf    # Cliente B (Lite)
+└── reporte_test_manual_001.pdf         # Test
+```
+
+**Nomenclatura**: `reporte_[session_id].pdf`  
+**Storage local**: Carpeta `/reports` creada automáticamente  
+**Delivery**: Telegram como documento adjunto (opcional)
+
+### 🔧 Configuración
+
+```bash
+# 1. Instalar dependencia
+pip install fpdf2>=2.7.0
+
+# 2. El sistema está listo
+# No requiere configuración adicional
+# Los PDFs se generan automáticamente en cada auditoría
+```
+
+### 🧪 Testing
+
+**Test standalone de PDF Generator:**
+
+```powershell
+python test_sprint4.py
+```
+
+Genera 9 PDFs de prueba:
+- 3 niveles de score (Critical, Good, Perfect)
+- 3 idiomas cada uno (es, en, fr)
+
+**Test de integración completa:**
+
+```powershell
+# Terminal 1
+python sentinelautomationengine.py
+
+# Terminal 2
+python test_sprint3.py  # Ya incluye generación de PDF
+```
+
+### 📊 Especificaciones Técnicas
+
+#### Motor PDF: FPDF2
+
+- **Librería**: fpdf2 v2.7+ (moderna, mantenida activamente)
+- **Ventajas sobre ReportLab**:
+  - Más ligera (no requiere dependencias externas)
+  - API más simple y Pythonic
+  - Mejor soporte para Unicode y fuentes
+  - Documentación excelente
+
+#### Características Técnicas
+
+```python
+from report_generator import generate_pdf_report
+
+# Generar PDF desde audit report
+success = generate_pdf_report(
+    audit_report=report,      # Dict from DMSentinelAuditor.run_scan()
+    output_path="reports/reporte_session123.pdf",
+    language="es"             # es, en, fr, pt, eo
+)
+```
+
+**Data Binding:**
+- Input: JSON producido por `DMSentinelAuditor.run_scan()`
+- Output: PDF con formato profesional
+
+**Layout Features:**
+- Multi-page handling con `auto_page_break`
+- Tablas que no se cortan entre páginas (`multi_cell`)
+- Headers y footers automáticos en cada página
+- Paginación dinámica: "Página X/Y"
+
+#### Clase DMSentinelPDF
+
+```python
+class DMSentinelPDF(FPDF):
+    """Custom FPDF with DM Sentinel branding."""
+    
+    def header(self):
+        """Page header con logo DM SENTINEL"""
+        
+    def footer(self):
+        """Page footer con session ID y paginación"""
+        
+    def chapter_title(self, title, icon):
+        """Título de capítulo con icono"""
+        
+    def add_score_box(self, score, grade, risk_level):
+        """Badge visual de score prominente"""
+        
+    def add_vulnerability_table(self, vulnerabilities):
+        """Tabla con color coding por severidad"""
+        
+    def add_mitigation_plan(self, vulnerabilities):
+        """Plan técnico agrupado por prioridad"""
+```
+
+### 📱 Telegram Integration
+
+**Envío automático del PDF como adjunto:**
+
+```python
+# En execute_audit_async() - Paso 5
+if pdf_path and os.path.exists(pdf_path):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+    
+    with open(pdf_path, 'rb') as pdf_file:
+        files = {'document': pdf_file}
+        data = {
+            'chat_id': CHAT_ID,
+            'caption': f'📄 Reporte PDF - Session: {session_id}'
+        }
+        
+        response = requests.post(url, files=files, data=data, timeout=30)
+```
+
+**Resultado en Telegram:**
+
+1. **Mensaje de alerta** (MarkdownV2 con botones inline)
+2. **PDF adjunto** (reporte completo descargable)
+
+### 🎓 Ejemplo de Flujo Completo
+
+```
+Cliente paga $99 en Stripe por auditoría Corporate
+    ↓
+Stripe envía webhook → sentinelautomationengine.py
+    ↓
+[PASO 1] log_sale() → Google Sheets CRM_LEADS (Status: Iniciando)
+    ↓
+[PASO 2] run_scan() → Auditoría ejecutada (Score: 72/100, 12 vulns)
+    ↓
+[PASO 3] log_audit() → Google Sheets AUDIT_LOGS
+    ↓
+[PASO 3.5] generate_pdf_report() → reports/reporte_cs_abc123.pdf  ⭐
+    • Resumen ejecutivo con score badge
+    • Tabla de 12 vulnerabilidades con colores
+    • Plan de mitigación técnico en español
+    ↓
+[PASO 4] update_sale_status() → Google Sheets (Status: Completado)
+    ↓
+[PASO 5] send_telegram_alert() → Notificación MarkdownV2
+         + PDF adjunto 📄 reporte_cs_abc123.pdf  ⭐
+```
+
+**Tiempo total**: < 2 minutos desde pago hasta reporte en Telegram
+
+### 🛡️ Error Handling
+
+**Arquitectura Resiliente:**
+
+```python
+# PDF generation is NON-BLOCKING
+if PDF_AVAILABLE and report:
+    try:
+        generate_pdf_report(...)
+    except Exception as e:
+        logger.error(f"[PDF] Error (no bloqueante): {e}")
+        pdf_path = None  # Continue without PDF
+
+# Telegram alert ALWAYS sent
+send_telegram_alert()  # GUARANTEED
+
+# PDF attachment is OPTIONAL
+if pdf_path:
+    send_telegram_document(pdf_path)  # Best-effort
+```
+
+**Garantías:**
+
+✅ **PDF falla** → Auditoría continúa, Sheets actualizado, Telegram enviado  
+✅ **Telegram falla** → PDF generado y guardado localmente  
+✅ **Sheets falla** → PDF y Telegram funcionan independientemente  
+
+### 📖 Recursos
+
+- 📄 **Test script**: [test_sprint4.py](test_sprint4.py)
+- 🎨 **PDF Generator**: [report_generator.py](report_generator.py) (850+ líneas)
+- 📘 **FPDF2 Docs**: [pyfpdf.github.io/fpdf2](https://pyfpdf.github.io/fpdf2/)
+
+---
+
 ## 🌐 Sentinel Automation Engine (Legacy)
 
 Integración con Webhooks para auditorías automáticas tras pagos:
