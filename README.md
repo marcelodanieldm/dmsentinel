@@ -68,6 +68,24 @@
 - **Reportes de delta**: Vulnerabilidades nuevas vs resueltas
 - **Estadísticas**: Score promedio, volatilidad, overall trend
 
+### 💳 Multi-Gateway Payment System (NEW v3.0)
+- **3 Pricing Tiers**: Check-up ($49 one-time), Sentinel ($19/month), Sentinel Pro ($99/month)
+- **Stripe Integration**: Credit/debit cards + subscriptions with recurring billing
+- **Mercado Pago + PIX**: Instant payments for Brazil and Latin America
+- **USDC Cryptocurrency**: Blockchain payments for Web3 community
+- **Subscription Support**: Automatic monthly audits with invoice.payment_succeeded events
+- **Webhook Automation**: Non-blocking architecture with threading
+- **CRM Tracking**: Google Sheets integration for subscription status and payment mode
+- **Email Delivery**: Automated PDF reports sent to clients after payment
+- **Multi-language Landing Page**: Cyber-dark design with 5-language support
+
+### 📧 Email Delivery System (Sprint 4)
+- **SMTP/TLS Integration**: Gmail App Password support
+- **HTML Email Templates**: Professional branding with 5-language support
+- **PDF Attachments**: Automated report delivery after audit completion
+- **Non-blocking Architecture**: Email failures don't stop workflow
+- **Color-coded Reports**: Score badges and risk-level indicators
+
 ---
 
 ## 🛠️ Stack Tecnológico
@@ -350,27 +368,126 @@ stripe trigger checkout.session.completed
 python test_webhooks.py
 ```
 
-### 🔧 Configuración de Metadata en Stripe
+### 🔧 Configuración de Metadata en Payment Gateways
 
-Al crear sesión de checkout, incluir metadata:
+#### Stripe (Cards + Subscriptions)
 
+**One-Time Payment:**
 ```python
 import stripe
 
 session = stripe.checkout.Session.create(
     payment_method_types=['card'],
-    line_items=[{'price': 'price_...', 'quantity': 1}],
-    mode='payment',
-    success_url='https://tusitio.com/success',
+    line_items=[{'price': 'price_checkup_49usd', 'quantity': 1}],
+    mode='payment',  # One-time payment
+    success_url='https://dmsentinel.com/success?session_id={CHECKOUT_SESSION_ID}',
+    cancel_url='https://dmsentinel.com/cancel',
     
     # ⭐ Metadata requerida para DM Sentinel
     metadata={
         'target_url': 'https://cliente-sitio.com',  # REQUERIDO
-        'plan_id': 'corporate',                     # lite o corporate
+        'plan_id': 'checkup',                       # checkup, sentinel, pro
         'lang': 'es',                               # es, en, fr, pt, eo
     }
 )
 ```
+
+**Subscription (Recurring):**
+```python
+session = stripe.checkout.Session.create(
+    payment_method_types=['card'],
+    line_items=[{'price': 'price_sentinel_19usd_monthly', 'quantity': 1}],
+    mode='subscription',  # Recurring subscription
+    success_url='https://dmsentinel.com/success?session_id={CHECKOUT_SESSION_ID}',
+    cancel_url='https://dmsentinel.com/cancel',
+    
+    metadata={
+        'target_url': 'https://cliente-sitio.com',
+        'plan_id': 'sentinel',  # sentinel or pro
+        'lang': 'es',
+    }
+)
+```
+
+**Stripe Subscription Events:**
+- `customer.subscription.created` → Triggers first audit
+- `invoice.payment_succeeded` (billing_reason='subscription_cycle') → Triggers monthly audit
+- `customer.subscription.deleted` → Updates CRM status to 'CANCELADA'
+- `customer.subscription.updated` → Updates CRM with new status
+
+#### Mercado Pago (PIX + LATAM)
+
+**Create Preference:**
+```python
+import mercadopago
+
+sdk = mercadopago.SDK("YOUR_ACCESS_TOKEN")
+
+preference_data = {
+    "items": [
+        {
+            "title": "DM Sentinel - Check-up Único",
+            "quantity": 1,
+            "unit_price": 49
+        }
+    ],
+    "payment_methods": {
+        "excluded_payment_types": [],
+        "installments": 1
+    },
+    "metadata": {
+        "target_url": "https://cliente-sitio.com",
+        "plan_id": "checkup",
+        "lang": "pt",
+        "payment_mode": "payment"
+    },
+    "external_reference": "mp_unique_session_id",
+    "notification_url": "https://api.dmsentinel.com/webhooks/mercadopago"
+}
+
+preference = sdk.preference().create(preference_data)
+init_point = preference["response"]["init_point"]  # Redirect URL
+```
+
+**Webhook Events:**
+- `payment.created` → Payment initiated
+- `payment.approved` → Payment confirmed (instant for PIX) → Triggers audit
+
+#### USDC (Coinbase Commerce)
+
+**Create Charge:**
+```python
+import coinbase_commerce
+
+client = coinbase_commerce.Client(api_key='YOUR_API_KEY')
+
+charge = client.charge.create(
+    name='DM Sentinel - Check-up',
+    description='Security Audit Report',
+    pricing_type='fixed_price',
+    local_price={
+        'amount': '49.00',
+        'currency': 'USD'
+    },
+    metadata={
+        'target_url': 'https://cliente-sitio.com',
+        'client_email': 'cliente@empresa.com',
+        'plan_id': 'checkup',
+        'lang': 'en',
+        'payment_mode': 'payment'
+    },
+    redirect_url='https://dmsentinel.com/success',
+    cancel_url='https://dmsentinel.com/cancel'
+)
+
+hosted_url = charge['hosted_url']  # Redirect to crypto payment page
+```
+
+**Webhook Events:**
+- `charge:confirmed` → Blockchain confirmation received → Triggers audit
+- `charge:resolved` → Payment finalized
+
+---
 
 ### 📱 Notificación Telegram Mejorada
 
@@ -403,19 +520,73 @@ session = stripe.checkout.Session.create(
 
 ### 📊 Flujo de Automatización
 
+**One-Time Payment (Checkup):**
 ```
 1. Cliente paga → Stripe checkout.session.completed
 2. Stripe envía webhook con firma HMAC
 3. DM Sentinel verifica firma (construct_event)
 4. Extrae metadata: target_url, plan_id, client_email
-5. Inicia thread asíncrono para auditoría
-6. Responde 200 OK a Stripe (< 100ms)
-7. [Thread] Ejecuta auditoría según plan
-8. [Thread] Calcula score, detecta vulnerabilidades
-9. [Thread] Si score < umbral → Alerta Telegram
-10. [Thread] Guarda reporte con session_id
-11. [Thread] Registra en historial SQLite
+5. Detecta mode='payment' (one-time)
+6. Inicia thread asíncrono para auditoría
+7. Responde 200 OK a Stripe (< 100ms)
+8. [Thread] Registra en CRM: Status='Iniciando', Type='PAGO ÚNICO'
+9. [Thread] Ejecuta auditoría según plan
+10. [Thread] Genera PDF con reporte
+11. [Thread] Envía email al cliente con PDF adjunto
+12. [Thread] Actualiza CRM: Status='Completado'
+13. [Thread] Si score < umbral → Alerta Telegram con PDF adjunto
 ```
+
+**Subscription (Sentinel/Pro):**
+```
+1. Cliente paga → Stripe checkout.session.completed (mode='subscription')
+2. Webhook procesado → Detecta subscription_id
+3. [Thread] Registra en CRM: Status='Iniciando', Type='SUSCRIPCIÓN ACTIVA', subscription_id
+4. [Thread] Ejecuta primera auditoría
+5. Stripe dispara: customer.subscription.created
+6. Sistema confirma suscripción activa
+7. --- Después de 30 días ---
+8. Stripe cobra automáticamente → invoice.payment_succeeded (billing_reason='subscription_cycle')
+9. Webhook detecta nuevo ciclo de facturación
+10. [Thread] Ejecuta auditoría mensual automática
+11. [Thread] Envía nuevo PDF al cliente
+12. [Thread] Actualiza CRM con fecha de última auditoría
+13. [Repeat paso 7-12 cada mes]
+```
+
+**Subscription Cancellation:**
+```
+1. Cliente cancela → Stripe customer.subscription.deleted
+2. Webhook recibido
+3. Sistema actualiza CRM: Status='SUSCRIPCIÓN CANCELADA'
+4. No más auditorías automáticas
+5. Telegram notifica cancelación al admin
+```
+
+**Mercado Pago/PIX:**
+```
+1. Cliente paga con PIX → payment.created
+2. PIX confirmado en <10 segundos → payment.approved
+3. Webhook /webhooks/mercadopago recibe notificación
+4. Recupera payment_info vía Mercado Pago API
+5. Verifica status='approved'
+6. Extrae metadata del preference
+7. [Thread] Ejecuta auditoría (igual que Stripe one-time)
+```
+
+**USDC Crypto:**
+```
+1. Cliente escanea QR con wallet → charge.created
+2. Transacción enviada a blockchain
+3. 12 confirmaciones requeridas (~3-5 mins)
+4. Coinbase Commerce dispara: charge:confirmed
+5. Webhook /webhooks/crypto recibe evento
+6. Verifica payment_status='CONFIRMED'
+7. Valida amount matches plan price (±2% tolerance)
+8. [Thread] Ejecuta auditoría
+```
+
+---
 
 ### 📝 Logs con Trazabilidad Forense
 

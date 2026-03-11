@@ -1,4 +1,41 @@
 # DM Sentinel v3.0 - Enterprise Security Audit Platform
+# Dependencies for complete multi-gateway payment system
+
+# Core Framework
+flask==3.0.0
+werkzeug==3.0.1
+
+# Payment Gateways
+stripe==7.8.0                    # Stripe payments + subscriptions
+mercadopago==2.2.1               # Mercado Pago (PIX, LATAM)
+
+# PDF Report Generation (Sprint 4)
+fpdf2>=2.7.0
+
+# Google Sheets CRM Integration
+google-api-python-client==2.108.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+
+# HTTP Requests
+requests==2.31.0
+urllib3==2.1.0
+
+# Security & Vulnerability Detection
+dnspython==2.4.2                 # DNS analysis
+beautifulsoup4==4.12.2           # HTML parsing
+lxml==4.9.3                      # XML/HTML processing
+cryptography==41.0.7             # SSL/TLS analysis
+
+# Utilities
+python-dotenv==1.0.0             # Environment variables
+pytz==2023.3                     # Timezone handling
+
+# Development & Testing
+pytest==7.4.3
+black==23.12.1
+pylint==3.0.3
 # Python 3.9+ Required
 # Installation: pip install -r requirements.txt
 

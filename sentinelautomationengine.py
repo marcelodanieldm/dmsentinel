@@ -30,6 +30,19 @@ except ImportError:
     STRIPE_AVAILABLE = False
     print("[!] Stripe library not installed. Run: pip install stripe")
 
+# Import pricing configuration
+try:
+    from pricing_config import (
+        PRICING_TIERS, 
+        get_plan_config, 
+        is_subscription_plan,
+        get_plan_price
+    )
+    PRICING_CONFIG_AVAILABLE = True
+except ImportError:
+    PRICING_CONFIG_AVAILABLE = False
+    print("[!] pricing_config.py not found. Using legacy plan configuration.")
+
 # --- CONFIGURACIÓN DE DM SENTINEL ---
 # Nota: En producción, estas variables se cargan desde el entorno (env vars)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "TU_BOT_TOKEN")
@@ -55,6 +68,8 @@ app = Flask(__name__)
 
 
 # ============= PLAN CONFIGURATION =============
+# Legacy configuration maintained for backward compatibility
+# New pricing system uses pricing_config.py
 
 PLAN_CONFIG = {
     'lite': {
@@ -62,7 +77,7 @@ PLAN_CONFIG = {
         'include_dns_analysis': False,
         'include_form_analysis': False,
         'include_cookie_analysis': False,
-        'alert_threshold': 60,  # Alerta si score < 60
+        'alert_threshold': 60,
         'description': 'Plan Lite: Escaneo básico de vulnerabilidades'
     },
     'corporate': {
@@ -70,8 +85,36 @@ PLAN_CONFIG = {
         'include_dns_analysis': True,
         'include_form_analysis': True,
         'include_cookie_analysis': True,
-        'alert_threshold': 70,  # Alerta si score < 70
+        'alert_threshold': 70,
         'description': 'Plan Corporate: Auditoría completa con todos los módulos'
+    },
+    # New pricing tiers (v3.0)
+    'checkup': {
+        'max_scan_depth': 'deep',
+        'include_dns_analysis': True,
+        'include_form_analysis': True,
+        'include_cookie_analysis': True,
+        'alert_threshold': 70,
+        'description': 'Check-up Único: Auditoría completa one-time',
+        'payment_mode': 'payment'
+    },
+    'sentinel': {
+        'max_scan_depth': 'deep',
+        'include_dns_analysis': True,
+        'include_form_analysis': True,
+        'include_cookie_analysis': True,
+        'alert_threshold': 70,
+        'description': 'Sentinel: Monitoreo mensual con alertas',
+        'payment_mode': 'subscription'
+    },
+    'pro': {
+        'max_scan_depth': 'deep',
+        'include_dns_analysis': True,
+        'include_form_analysis': True,
+        'include_cookie_analysis': True,
+        'alert_threshold': 80,
+        'description': 'Sentinel Pro: Monitoreo continuo 24/7 con todas las herramientas',
+        'payment_mode': 'subscription'
     }
 }
 
@@ -412,7 +455,8 @@ except ImportError:
 # ============= BACKGROUND AUDIT EXECUTOR =============
 
 def execute_audit_async(target_url: str, client_email: str, plan_id: str,
-                       lang: str, session_id: str):
+                       lang: str, session_id: str, subscription_id: str = None,
+                       payment_mode: str = 'payment'):
     """
     Ejecuta auditoría en background thread con integración completa del ciclo de vida.
     
@@ -439,17 +483,28 @@ def execute_audit_async(target_url: str, client_email: str, plan_id: str,
     if SHEETS_AVAILABLE:
         try:
             logger.info("[SHEETS] Registrando venta en CRM_LEADS...")
+            
+            # Get plan price if available
+            amount = 0.0
+            if PRICING_CONFIG_AVAILABLE:
+                amount = get_plan_price(plan_id, 'USD')
+            
+            # Determine subscription status
+            subscription_status = "SUSCRIPCIÓN ACTIVA" if payment_mode == 'subscription' else "PAGO ÚNICO"
+            
             log_sale(
                 session_id=session_id,
                 client_email=client_email,
                 plan_id=plan_id,
-                amount=0.0,  # Stripe ya procesó el pago, aquí es solo tracking
+                amount=amount,
                 currency="USD",
                 target_url=target_url,
                 language=lang,
-                status="Iniciando"
+                status="Iniciando",
+                subscription_id=subscription_id,
+                subscription_status=subscription_status
             )
-            logger.info("[SHEETS] ✓ Venta registrada en CRM con status 'Iniciando'")
+            logger.info(f"[SHEETS] ✓ Venta registrada en CRM con status 'Iniciando' | Mode: {payment_mode}")
         except Exception as e:
             logger.error(f"[SHEETS] Error registrando venta (no bloqueante): {e}")
     else:
@@ -714,24 +769,31 @@ def stripe_webhook():
             logger.warning("Email de cliente no disponible")
             client_email = "unknown@customer.com"
         
+        # Determine payment mode (one-time vs subscription)
+        payment_mode = 'subscription' if session.get('mode') == 'subscription' else 'payment'
+        subscription_id = session.get('subscription')  # Will be None for one-time payments
+        
+        logger.info(f"Payment mode: {payment_mode} | Subscription ID: {subscription_id}")
+        
         # ===== ARQUITECTURA NO BLOQUEANTE =====
         # Ejecutar auditoría en thread separado para responder inmediatamente a Stripe
         
         audit_thread = threading.Thread(
             target=execute_audit_async,
-            args=(target_url, client_email, plan_id, lang, session_id),
+            args=(target_url, client_email, plan_id, lang, session_id, subscription_id, payment_mode),
             daemon=True
         )
         audit_thread.start()
         
-        logger.info(f"Thread de auditoría iniciado | Thread ID: {audit_thread.ident}")
+        logger.info(f"Thread de auditoría iniciado | Thread ID: {audit_thread.ident} | Mode: {payment_mode}")
         
         # Respuesta inmediata a Stripe (< 100ms típicamente)
         return jsonify({
             'success': True,
             'message': 'Audit scheduled',
             'session_id': session_id,
-            'plan': plan_id
+            'plan': plan_id,
+            'payment_mode': payment_mode
         }), 200
     
     elif event['type'] == 'checkout.session.async_payment_succeeded':
@@ -747,13 +809,163 @@ def stripe_webhook():
         lang = session.get('metadata', {}).get('lang', 'es')
         plan_id = session.get('metadata', {}).get('plan_id', 'lite')
         
+        # Determine if this is a subscription
+        payment_mode = 'subscription' if session.get('mode') == 'subscription' else 'payment'
+        subscription_id = session.get('subscription')
+        
         if target_url:
             audit_thread = threading.Thread(
                 target=execute_audit_async,
-                args=(target_url, client_email, plan_id, lang, session_id),
+                args=(target_url, client_email, plan_id, lang, session_id, subscription_id, payment_mode),
                 daemon=True
             )
             audit_thread.start()
+        
+        return jsonify({'success': True}), 200
+    
+    # ===== NEW: SUBSCRIPTION EVENTS =====
+    
+    elif event['type'] == 'customer.subscription.created':
+        # Nueva suscripción creada (primera vez)
+        subscription = event['data']['object']
+        subscription_id = subscription.get('id')
+        customer_id = subscription.get('customer')
+        status = subscription.get('status')
+        
+        logger = logging.LoggerAdapter(
+            logging.getLogger(__name__),
+            {'session_id': subscription_id}
+        )
+        
+        logger.info(f"Suscripción creada | Subscription ID: {subscription_id} | Status: {status}")
+        
+        # Retrieve customer and metadata from subscription
+        try:
+            customer = stripe.Customer.retrieve(customer_id)
+            client_email = customer.get('email', 'unknown@customer.com')
+            
+            # Get metadata from subscription
+            target_url = subscription.get('metadata', {}).get('target_url')
+            plan_id = subscription.get('metadata', {}).get('plan_id', 'sentinel')
+            lang = subscription.get('metadata', {}).get('lang', 'es')
+            
+            if target_url and status in ['active', 'trialing']:
+                logger.info(f"Iniciando auditoría para nueva suscripción | Plan: {plan_id}")
+                
+                audit_thread = threading.Thread(
+                    target=execute_audit_async,
+                    args=(target_url, client_email, plan_id, lang, subscription_id, subscription_id, 'subscription'),
+                    daemon=True
+                )
+                audit_thread.start()
+            else:
+                logger.info(f"Suscripción creada pero no activa o sin target_url | Status: {status}")
+        
+        except Exception as e:
+            logger.error(f"Error procesando customer.subscription.created: {e}")
+        
+        return jsonify({'success': True}), 200
+    
+    elif event['type'] == 'invoice.payment_succeeded':
+        # Pago recurrente de suscripción exitoso
+        invoice = event['data']['object']
+        subscription_id = invoice.get('subscription')
+        customer_id = invoice.get('customer')
+        billing_reason = invoice.get('billing_reason')
+        
+        logger = logging.LoggerAdapter(
+            logging.getLogger(__name__),
+            {'session_id': subscription_id or 'invoice'}
+        )
+        
+        logger.info(f"Pago de invoice exitoso | Subscription: {subscription_id} | Billing Reason: {billing_reason}")
+        
+        # Only trigger audit for subscription_cycle (recurring payment)
+        # Skip subscription_create as it's already handled by customer.subscription.created
+        if billing_reason == 'subscription_cycle' and subscription_id:
+            try:
+                # Retrieve subscription to get metadata
+                subscription = stripe.Subscription.retrieve(subscription_id)
+                customer = stripe.Customer.retrieve(customer_id)
+                
+                client_email = customer.get('email', 'unknown@customer.com')
+                target_url = subscription.get('metadata', {}).get('target_url')
+                plan_id = subscription.get('metadata', {}).get('plan_id', 'sentinel')
+                lang = subscription.get('metadata', {}).get('lang', 'es')
+                
+                if target_url:
+                    logger.info(f"Iniciando auditoría por pago recurrente | Plan: {plan_id}")
+                    
+                    # Use invoice ID as session_id for this recurring audit
+                    invoice_session_id = f"invoice_{invoice.get('id')}"
+                    
+                    audit_thread = threading.Thread(
+                        target=execute_audit_async,
+                        args=(target_url, client_email, plan_id, lang, invoice_session_id, subscription_id, 'subscription'),
+                        daemon=True
+                    )
+                    audit_thread.start()
+                else:
+                    logger.warning("No se encontró target_url en metadata de suscripción")
+            
+            except Exception as e:
+                logger.error(f"Error procesando invoice.payment_succeeded: {e}")
+        else:
+            logger.debug(f"Invoice con billing_reason '{billing_reason}' - no se requiere auditoría")
+        
+        return jsonify({'success': True}), 200
+    
+    elif event['type'] == 'customer.subscription.deleted':
+        # Suscripción cancelada
+        subscription = event['data']['object']
+        subscription_id = subscription.get('id')
+        
+        logger = logging.LoggerAdapter(
+            logging.getLogger(__name__),
+            {'session_id': subscription_id}
+        )
+        
+        logger.info(f"Suscripción cancelada | Subscription ID: {subscription_id}")
+        
+        # Update CRM status to 'Cancelada'
+        if SHEETS_AVAILABLE:
+            try:
+                update_sale_status(session_id=subscription_id, status="SUSCRIPCIÓN CANCELADA")
+                logger.info("[SHEETS] ✓ Status actualizado a 'SUSCRIPCIÓN CANCELADA'")
+            except Exception as e:
+                logger.error(f"[SHEETS] Error actualizando status de cancelación: {e}")
+        
+        return jsonify({'success': True}), 200
+    
+    elif event['type'] == 'customer.subscription.updated':
+        # Suscripción actualizada (cambio de plan, pausa, etc.)
+        subscription = event['data']['object']
+        subscription_id = subscription.get('id')
+        status = subscription.get('status')
+        
+        logger = logging.LoggerAdapter(
+            logging.getLogger(__name__),
+            {'session_id': subscription_id}
+        )
+        
+        logger.info(f"Suscripción actualizada | Subscription ID: {subscription_id} | Status: {status}")
+        
+        # Update CRM status based on subscription status
+        if SHEETS_AVAILABLE and status:
+            try:
+                status_map = {
+                    'active': 'SUSCRIPCIÓN ACTIVA',
+                    'past_due': 'PAGO ATRASADO',
+                    'canceled': 'SUSCRIPCIÓN CANCELADA',
+                    'unpaid': 'IMPAGO',
+                    'paused': 'PAUSADA'
+                }
+                
+                new_status = status_map.get(status, f"SUSCRIPCIÓN {status.upper()}")
+                update_sale_status(session_id=subscription_id, status=new_status)
+                logger.info(f"[SHEETS] ✓ Status actualizado a '{new_status}'")
+            except Exception as e:
+                logger.error(f"[SHEETS] Error actualizando status de suscripción: {e}")
         
         return jsonify({'success': True}), 200
     
@@ -782,14 +994,18 @@ def stripe_webhook_test():
     plan_id = data.get('plan_id', 'lite')
     lang = data.get('lang', 'es')
     session_id = data.get('session_id', f"test_{int(time.time())}")
+    payment_mode = data.get('payment_mode', 'payment')  # 'payment' or 'subscription'
+    subscription_id = data.get('subscription_id', None)
     
     if not target_url:
         return jsonify({'error': 'target_url required'}), 400
     
+    logger.info(f"[TEST] Scheduling audit | Plan: {plan_id} | Mode: {payment_mode}")
+    
     # Execute async
     audit_thread = threading.Thread(
         target=execute_audit_async,
-        args=(target_url, client_email, plan_id, lang, session_id),
+        args=(target_url, client_email, plan_id, lang, session_id, subscription_id, payment_mode),
         daemon=True
     )
     audit_thread.start()
@@ -798,7 +1014,8 @@ def stripe_webhook_test():
         'success': True,
         'message': 'Test audit scheduled',
         'session_id': session_id,
-        'plan': plan_id
+        'plan': plan_id,
+        'payment_mode': payment_mode
     }), 200
 
 
@@ -814,24 +1031,263 @@ def health_check():
     }), 200
 
 
+# ============= MERCADO PAGO WEBHOOK =============
+
+@app.route('/webhooks/mercadopago', methods=['POST'])
+def mercadopago_webhook():
+    """
+    Webhook para pagos de Mercado Pago (incluye PIX).
+    
+    Documentación: https://www.mercadopago.com/developers/es/docs/your-integrations/notifications/webhooks
+    
+    Maneja eventos de:
+    - payment.created: Pago creado
+    - payment.approved: Pago aprobado (PIX es instantáneo)
+    """
+    logger = logging.LoggerAdapter(
+        logging.getLogger(__name__),
+        {'session_id': 'mercadopago'}
+    )
+    
+    logger.info("Webhook recibido de Mercado Pago")
+    
+    try:
+        # Get notification data
+        data = request.get_json()
+        
+        if not data:
+            logger.error("Payload vacío o inválido")
+            return jsonify({'error': 'Invalid payload'}), 400
+        
+        # Mercado Pago sends notifications with this structure:
+        # {
+        #   "action": "payment.created" or "payment.approved",
+        #   "data": { "id": "payment_id" },
+        #   "type": "payment"
+        # }
+        
+        action = data.get('action')
+        notification_type = data.get('type')
+        payment_id = data.get('data', {}).get('id')
+        
+        logger.info(f"Notification: {action} | Type: {notification_type} | Payment ID: {payment_id}")
+        
+        # Only process payment notifications
+        if notification_type != 'payment':
+            logger.info(f"Notification type '{notification_type}' no requiere procesamiento")
+            return jsonify({'success': True}), 200
+        
+        # Only trigger audit on payment approval
+        if action != 'payment.approved':
+            logger.info(f"Payment action '{action}' - esperando aprobación")
+            return jsonify({'success': True, 'message': 'Payment not yet approved'}), 200
+        
+        # Retrieve payment details from Mercado Pago API
+        try:
+            import mercadopago
+            from pricing_config import MERCADOPAGO_ACCESS_TOKEN
+            
+            sdk = mercadopago.SDK(MERCADOPAGO_ACCESS_TOKEN)
+            payment_info = sdk.payment().get(payment_id)
+            payment = payment_info['response']
+            
+            status = payment.get('status')
+            
+            # Only process approved payments
+            if status != 'approved':
+                logger.info(f"Payment status '{status}' - no se procesa")
+                return jsonify({'success': True, 'message': f'Payment status: {status}'}), 200
+            
+            # Extract metadata from payment
+            metadata = payment.get('metadata', {})
+            external_reference = payment.get('external_reference')  # Often used for session_id
+            
+            target_url = metadata.get('target_url')
+            client_email = payment.get('payer', {}).get('email', 'unknown@customer.com')
+            plan_id = metadata.get('plan_id', 'checkup')
+            lang = metadata.get('lang', 'es')
+            payment_mode = metadata.get('payment_mode', 'payment')
+            
+            session_id = external_reference or f"mp_{payment_id}"
+            
+            logger.info(f"Payment approved | Cliente: {client_email} | Plan: {plan_id} | Target: {target_url}")
+            
+            if not target_url:
+                logger.error("target_url no encontrado en metadata de Mercado Pago")
+                return jsonify({'error': 'Missing target_url in metadata'}), 400
+            
+            # Execute audit async
+            audit_thread = threading.Thread(
+                target=execute_audit_async,
+                args=(target_url, client_email, plan_id, lang, session_id, None, payment_mode),
+                daemon=True
+            )
+            audit_thread.start()
+            
+            logger.info(f"Thread de auditoría iniciado para pago de Mercado Pago | Session: {session_id}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Audit scheduled',
+                'session_id': session_id,
+                'payment_id': payment_id
+            }), 200
+        
+        except ImportError:
+            logger.error("Mercado Pago SDK no instalado. Run: pip install mercadopago")
+            return jsonify({'error': 'Mercado Pago SDK not configured'}), 500
+        
+        except Exception as e:
+            logger.error(f"Error recuperando datos de pago de Mercado Pago: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    except Exception as e:
+        logger.error(f"Error procesando webhook de Mercado Pago: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+# ============= USDC/CRYPTO WEBHOOK =============
+
+@app.route('/webhooks/crypto', methods=['POST'])
+def crypto_webhook():
+    """
+    Webhook para pagos en criptomonedas (USDC).
+    
+    Compatible con:
+    - Coinbase Commerce
+    - Generic blockchain payment processors
+    
+    Verifica confirmaciones de blockchain antes de activar el servicio.
+    """
+    logger = logging.LoggerAdapter(
+        logging.getLogger(__name__),
+        {'session_id': 'crypto'}
+    )
+    
+    logger.info("Webhook recibido de Crypto Payment Gateway")
+    
+    try:
+        # Get notification data
+        data = request.get_json()
+        
+        if not data:
+            logger.error("Payload vacío o inválido")
+            return jsonify({'error': 'Invalid payload'}), 400
+        
+        # Coinbase Commerce structure example:
+        # {
+        #   "event": {
+        #     "type": "charge:confirmed",
+        #     "data": {
+        #       "code": "charge_code",
+        #       "metadata": { ... },
+        #       "payments": [{ "status": "CONFIRMED", "value": { "crypto": { "amount": "49.00", "currency": "USDC" } } }]
+        #     }
+        #   }
+        # }
+        
+        event = data.get('event', {})
+        event_type = event.get('type')
+        charge_data = event.get('data', {})
+        
+        logger.info(f"Crypto event: {event_type}")
+        
+        # Only process confirmed charges
+        if event_type not in ['charge:confirmed', 'charge:resolved']:
+            logger.info(f"Event type '{event_type}' - esperando confirmación")
+            return jsonify({'success': True, 'message': 'Waiting for confirmation'}), 200
+        
+        # Extract metadata
+        metadata = charge_data.get('metadata', {})
+        charge_code = charge_data.get('code')
+        
+        target_url = metadata.get('target_url')
+        client_email = metadata.get('client_email', 'unknown@customer.com')
+        plan_id = metadata.get('plan_id', 'checkup')
+        lang = metadata.get('lang', 'es')
+        payment_mode = metadata.get('payment_mode', 'payment')
+        
+        session_id = f"crypto_{charge_code}"
+        
+        # Verify payment amount matches plan price
+        payments = charge_data.get('payments', [])
+        if payments:
+            payment = payments[0]
+            payment_status = payment.get('status')
+            
+            if payment_status != 'CONFIRMED':
+                logger.warning(f"Payment status '{payment_status}' - no confirmado en blockchain")
+                return jsonify({'success': True, 'message': 'Payment not confirmed'}), 200
+            
+            # Check amount
+            crypto_amount = float(payment.get('value', {}).get('crypto', {}).get('amount', 0))
+            crypto_currency = payment.get('value', {}).get('crypto', {}).get('currency', 'USDC')
+            
+            logger.info(f"Crypto payment confirmed | Amount: {crypto_amount} {crypto_currency}")
+            
+            # Get expected price from pricing config
+            if PRICING_CONFIG_AVAILABLE:
+                expected_price = get_plan_price(plan_id, 'USD')
+                
+                # Allow 2% variance for crypto price fluctuation
+                if abs(crypto_amount - expected_price) > (expected_price * 0.02):
+                    logger.error(f"Amount mismatch: Expected {expected_price}, Got {crypto_amount}")
+                    return jsonify({'error': 'Amount mismatch'}), 400
+        
+        logger.info(f"Crypto payment approved | Cliente: {client_email} | Plan: {plan_id} | Target: {target_url}")
+        
+        if not target_url:
+            logger.error("target_url no encontrado en metadata de pago crypto")
+            return jsonify({'error': 'Missing target_url in metadata'}), 400
+        
+        # Execute audit async
+        audit_thread = threading.Thread(
+            target=execute_audit_async,
+            args=(target_url, client_email, plan_id, lang, session_id, None, payment_mode),
+            daemon=True
+        )
+        audit_thread.start()
+        
+        logger.info(f"Thread de auditoría iniciado para pago crypto | Session: {session_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Audit scheduled',
+            'session_id': session_id,
+            'charge_code': charge_code
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Error procesando webhook de crypto: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Root endpoint with API info"""
     return jsonify({
         'service': 'DM Sentinel Automation Engine v3.0',
-        'description': 'Webhook automation for Stripe payments with non-blocking audit execution',
+        'description': 'Multi-gateway webhook automation with subscription support',
         'endpoints': {
-            'POST /webhooks/stripe': 'Production webhook (signature verified)',
+            'POST /webhooks/stripe': 'Stripe webhook (payments + subscriptions)',
+            'POST /webhooks/mercadopago': 'Mercado Pago webhook (PIX + cards)',
+            'POST /webhooks/crypto': 'Cryptocurrency webhook (USDC)',
             'POST /webhooks/stripe/test': 'Test webhook (dev only)',
             'GET /health': 'Health check'
         },
         'features': [
             'Non-blocking architecture with threading',
             'Stripe signature verification',
-            'Plan-based audit logic (Lite/Corporate)',
+            'Subscription support (monthly recurring audits)',
+            'Multi-gateway: Stripe, Mercado Pago/PIX, USDC',
+            'Plan-based audit logic (Checkup/Sentinel/Pro)',
             'Enhanced Telegram notifications with inline buttons',
-            'Forensic traceability with session IDs'
+            'Forensic traceability with session IDs',
+            'Email delivery with PDF reports',
+            'Google Sheets CRM integration'
         ],
+        'pricing_tiers': ['checkup', 'sentinel', 'pro'],
+        'payment_gateways': ['stripe', 'mercadopago', 'pix', 'usdc'],
         'documentation': 'https://github.com/marcelodanieldm/dmsentinel'
     }), 200
 
