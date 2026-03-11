@@ -1,0 +1,267 @@
+import React, { useState, useEffect } from 'react';
+
+// --- TRADUCCIONES ---
+const translations = {
+  es: {
+    heroTitle: "Innovación Tecnológica sin Fronteras",
+    heroSub: "Seguridad Global para Activos Digitales y Auditoría de Infraestructura.",
+    sentinelTitle: "DM Sentinel",
+    sentinelDesc: "Nuestro brazo ejecutor en ciberseguridad. Auditoría proactiva de CMS y LMS con alertas en tiempo real.",
+    academyTitle: "Sentinel Academy",
+    academyDesc: "Capacitación en Moodle para blindar el factor humano contra el fraude digital.",
+    plansTitle: "Planes de Protección",
+    lite: "Plan Lite",
+    corp: "Plan Corporate",
+    ent: "Plan Enterprise",
+    contact: "Contactar a un experto",
+    cta: "Comenzar Auditoría",
+    priceLite: "$19/mes",
+    priceCorp: "$99/mes",
+    priceEnt: "Consultar",
+    features: ["Escaneo Mensual", "Acceso a Moodle", "Alertas Telegram", "Soporte 24/7", "Reportes Power BI"]
+  },
+  en: {
+    heroTitle: "Technological Innovation Without Borders",
+    heroSub: "Global Security for Digital Assets and Infrastructure Auditing.",
+    sentinelTitle: "DM Sentinel",
+    sentinelDesc: "Our cybersecurity arm. Proactive CMS & LMS auditing with real-time alerts.",
+    academyTitle: "Sentinel Academy",
+    academyDesc: "Moodle training to shield the human factor against digital fraud.",
+    plansTitle: "Protection Plans",
+    lite: "Lite Plan",
+    corp: "Corporate Plan",
+    ent: "Enterprise Plan",
+    contact: "Contact an expert",
+    cta: "Start Audit",
+    priceLite: "$19/mo",
+    priceCorp: "$99/mo",
+    priceEnt: "Inquire",
+    features: ["Monthly Scan", "Moodle Access", "Telegram Alerts", "24/7 Support", "Power BI Reports"]
+  },
+  pt: {
+    heroTitle: "Inovação Tecnológica Sem Fronteiras",
+    heroSub: "Segurança Global para Ativos Digitais e Auditoria de Infraestrutura.",
+    sentinelTitle: "DM Sentinel",
+    sentinelDesc: "Nosso braço de cibersegurança. Auditoria proativa de CMS e LMS com alertas em tempo real.",
+    academyTitle: "Sentinel Academy",
+    academyDesc: "Treinamento Moodle para blindar o fator humano contra fraudes digitais.",
+    plansTitle: "Planos de Proteção",
+    lite: "Plano Lite",
+    corp: "Plano Corporate",
+    ent: "Plano Enterprise",
+    contact: "Contatar um especialista",
+    cta: "Iniciar Auditoria",
+    priceLite: "$19/mês",
+    priceCorp: "$99/mês",
+    priceEnt: "Consultar",
+    features: ["Varredura Mensal", "Acesso Moodle", "Alertas Telegram", "Suporte 24/7", "Relatórios Power BI"]
+  },
+  fr: {
+    heroTitle: "Innovation Technologique Sans Frontières",
+    heroSub: "Sécurité globale pour les actifs numériques et audit d'infrastructure.",
+    sentinelTitle: "DM Sentinel",
+    sentinelDesc: "Notre branche cybersécurité. Audit proactif CMS & LMS avec alertes en temps réel.",
+    academyTitle: "Sentinel Academy",
+    academyDesc: "Formation Moodle pour protéger le facteur humain contre la fraude numérique.",
+    plansTitle: "Plans de Protection",
+    lite: "Plan Lite",
+    corp: "Plan Corporate",
+    ent: "Plan Enterprise",
+    contact: "Contacter un expert",
+    cta: "Lancer l'audit",
+    priceLite: "19$/mois",
+    priceCorp: "99$/mois",
+    priceEnt: "Consulter",
+    features: ["Scan Mensuel", "Accès Moodle", "Alertes Telegram", "Support 24/7", "Rapports Power BI"]
+  },
+  eo: {
+    heroTitle: "Teknologia Novigado Sen Limoj",
+    heroSub: "Tutmonda Sekureco por Ciferecaj Aktivaĵoj kaj Infrastruktura Aŭskultado.",
+    sentinelTitle: "DM Sentinel",
+    sentinelDesc: "Nia kibernetika sekureca brako. Proaktiva CMS kaj LMS-revizio kun realtempaj alarmoj.",
+    academyTitle: "Sentinel Academy",
+    academyDesc: "Moodle-trejnado por ŝirmi la homan faktoron kontraŭ cifereca fraŭdo.",
+    plansTitle: "Protektaj Planoj",
+    lite: "Lite Plano",
+    corp: "Corporate Plano",
+    ent: "Enterprise Plano",
+    contact: "Kontaktu eksperton",
+    cta: "Komenci Aŭskultadon",
+    priceLite: "$19/monate",
+    priceCorp: "$99/monate",
+    priceEnt: "Demandi",
+    features: ["Monata Skanado", "Moodle-Aliro", "Telegram-Alarmoj", "Subteno 24/7", "Power BI Raportoj"]
+  }
+};
+
+const App = () => {
+  const [lang, setLang] = useState('es');
+  const t = translations[lang];
+
+  useEffect(() => {
+    // Simulación de detección automática de idioma
+    const userLang = navigator.language.split('-')[0];
+    if (translations[userLang]) {
+      setLang(userLang);
+    }
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#0b0e14] text-white font-sans selection:bg-[#00d4ff] selection:text-[#0b0e14]">
+      {/* --- NAVBAR --- */}
+      <nav className="fixed w-full z-50 bg-[#0b0e14]/80 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-[#00d4ff] rounded-lg flex items-center justify-center text-[#0b0e14] font-bold">DM</div>
+            <span className="text-xl font-bold tracking-tighter">GLOBAL</span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <select 
+              value={lang} 
+              onChange={(e) => setLang(e.target.value)}
+              className="bg-transparent border border-white/20 rounded-md px-2 py-1 text-sm outline-none focus:border-[#00d4ff]"
+            >
+              <option value="es" className="bg-[#0b0e14]">Español</option>
+              <option value="en" className="bg-[#0b0e14]">English</option>
+              <option value="pt" className="bg-[#0b0e14]">Português</option>
+              <option value="fr" className="bg-[#0b0e14]">Français</option>
+              <option value="eo" className="bg-[#0b0e14]">Esperanto</option>
+            </select>
+            <button className="hidden md:block bg-white text-[#0b0e14] px-5 py-2 rounded-full font-bold text-sm hover:bg-[#00d4ff] transition-all">
+              {t.contact}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* --- HERO SECTION --- */}
+      <section className="pt-40 pb-20 px-6 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-block px-4 py-1.5 bg-[#00d4ff]/10 text-[#00d4ff] rounded-full text-xs font-bold tracking-widest uppercase mb-6 border border-[#00d4ff]/20">
+            Cyber Defense & Infrastructure
+          </div>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-8 leading-tight">
+            {t.heroTitle}
+          </h1>
+          <p className="text-xl text-white/60 mb-10 max-w-2xl mx-auto">
+            {t.heroSub}
+          </p>
+          <div className="flex flex-col md:flex-row justify-center gap-4">
+            <button className="bg-[#00d4ff] text-[#0b0e14] px-8 py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_30px_rgba(0,212,255,0.4)] transition-all">
+              {t.cta}
+            </button>
+            <button className="border border-white/10 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/5 transition-all">
+              Portfolio
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* --- PRODUCT FOCUS: DM SENTINEL --- */}
+      <section className="py-20 px-6 bg-gradient-to-b from-[#0b0e14] to-black">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#00d4ff]/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-[#00d4ff]/20 transition-all"></div>
+            {/* Mockup del Carpincho Tech */}
+            <div className="aspect-square bg-black/40 rounded-2xl mb-6 flex items-center justify-center border border-[#00d4ff]/20">
+               <svg className="w-32 h-32 text-[#00d4ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+               </svg>
+            </div>
+            <h3 className="text-3xl font-bold text-[#00d4ff] mb-4">{t.sentinelTitle}</h3>
+            <p className="text-white/70 leading-relaxed mb-6">
+              {t.sentinelDesc}
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-4xl font-bold mb-6 tracking-tight">Security Academy</h2>
+            <p className="text-lg text-white/50 mb-8">
+              {t.academyDesc}
+            </p>
+            <ul className="space-y-4">
+              {t.features.slice(0, 3).map((f, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#00d4ff]/20 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-[#00d4ff] rounded-full"></div>
+                  </div>
+                  <span className="font-semibold text-white/80">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* --- PRICING SECTION --- */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">{t.plansTitle}</h2>
+          <p className="text-white/50">Payments via Stripe, Pix, Mercado Pago & Crypto (USDC).</p>
+        </div>
+
+        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+          {/* LITE */}
+          <div className="p-8 bg-white/5 border border-white/10 rounded-2xl hover:border-[#00d4ff]/50 transition-all">
+            <h4 className="text-white/60 mb-2">{t.lite}</h4>
+            <div className="text-4xl font-bold mb-6">{t.priceLite}</div>
+            <ul className="space-y-4 mb-8 text-sm text-white/50">
+              <li>• CMS Basic Scan</li>
+              <li>• PDF Report</li>
+              <li>• Email Alerts</li>
+            </ul>
+            <button className="w-full py-3 border border-white/20 rounded-lg font-bold hover:bg-white/5 transition-all">Select</button>
+          </div>
+
+          {/* CORPORATE */}
+          <div className="p-8 bg-white/5 border-2 border-[#00d4ff] rounded-2xl relative shadow-[0_0_40px_rgba(0,212,255,0.1)]">
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#00d4ff] text-[#0b0e14] px-4 py-1 rounded-full text-xs font-black uppercase">Popular</div>
+            <h4 className="text-white/60 mb-2">{t.corp}</h4>
+            <div className="text-4xl font-bold mb-6 text-[#00d4ff]">{t.priceCorp}</div>
+            <ul className="space-y-4 mb-8 text-sm text-white/80">
+              <li>• {t.features[0]}</li>
+              <li>• {t.features[1]}</li>
+              <li>• {t.features[2]}</li>
+              <li>• Weekly Pentesting</li>
+            </ul>
+            <button className="w-full py-3 bg-[#00d4ff] text-[#0b0e14] rounded-lg font-bold hover:opacity-90 transition-all">Get Started</button>
+          </div>
+
+          {/* ENTERPRISE */}
+          <div className="p-8 bg-white/5 border border-white/10 rounded-2xl hover:border-[#00d4ff]/50 transition-all">
+            <h4 className="text-white/60 mb-2">{t.ent}</h4>
+            <div className="text-4xl font-bold mb-6">{t.priceEnt}</div>
+            <ul className="space-y-4 mb-8 text-sm text-white/50">
+              <li>• {t.features[3]}</li>
+              <li>• {t.features[4]}</li>
+              <li>• Web3 & Wallet Audit</li>
+              <li>• Dedicated Account Manager</li>
+            </ul>
+            <button className="w-full py-3 border border-white/20 rounded-lg font-bold hover:bg-white/5 transition-all">Inquire Now</button>
+          </div>
+        </div>
+      </section>
+
+      {/* --- FOOTER --- */}
+      <footer className="py-20 border-t border-white/5 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="text-center md:text-left">
+             <div className="flex items-center gap-2 mb-4 justify-center md:justify-start">
+              <div className="w-8 h-8 bg-[#00d4ff] rounded flex items-center justify-center text-[#0b0e14] font-bold text-xs">DM</div>
+              <span className="font-bold tracking-tighter">GLOBAL</span>
+            </div>
+            <p className="text-white/30 text-sm">© 2026 DM Global. Cyber Defense Systems.</p>
+          </div>
+          <div className="flex gap-8 text-sm text-white/40">
+            <a href="#" className="hover:text-[#00d4ff]">Privacy</a>
+            <a href="#" className="hover:text-[#00d4ff]">Terms</a>
+            <a href="#" className="hover:text-[#00d4ff]">Pix/Stripe Status</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
