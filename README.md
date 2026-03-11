@@ -1,0 +1,65 @@
+🛡️ DM Sentinel - Ecosistema Global de Seguridad
+
+DM Sentinel es la división de ciberseguridad proactiva de DM Global. Este proyecto automatiza la auditoría de activos digitales (CMS y LMS), integra capacitación humana mediante Moodle y centraliza la gestión comercial y técnica en un flujo de trabajo autónomo y multilingüe.
+
+🚀 Características Principales
+
+Auditoría de CMS/LMS: Escaneo proactivo de vulnerabilidades en WordPress, Drupal, Joomla y Moodle mediante fingerprinting y cruce de datos con CVEs.
+
+Sentinel Automation Engine: Integración mediante Webhooks para disparar auditorías inmediatamente después de un pago.
+
+Alertas Críticas: Sistema de notificaciones vía Telegram Bot para riesgos con puntaje menor a 70/100.
+
+Pagos Globales: Soporte nativo para Stripe, Mercado Pago, Pix y Binance (USDC).
+
+Sentinel Academy: Integración con Moodle para ofrecer capacitación automática en higiene digital tras la contratación.
+
+Reportabilidad: Generación de archivos JSON listos para ser consumidos por dashboards de Power BI.
+
+🛠️ Stack Tecnológico
+
+Lenguaje: Python 3.x
+
+Framework Web: Flask (para manejo de Webhooks)
+
+Automatización: Make.com / GitHub Actions
+
+Base de Datos/CRM: Google Sheets API
+
+Infraestructura: Serverless (Vercel / DonWeb)
+
+📋 Guía de Configuración Inicial
+
+1. Configuración de Telegram
+
+Crea un bot con @BotFather y guarda el API Token.
+
+Obtén tu Chat ID usando el bot @userinfobot.
+
+Configura estas credenciales en el archivo sentinel_engine.py.
+
+2. Configuración de Stripe (Checkout)
+
+Para que el motor de auditoría funcione, debes pasar la URL del cliente en los metadatos de la sesión de Stripe:
+
+target_url: URL del sitio a auditar.
+
+lang: Idioma detectado (es, en, pt, fr, eo).
+
+3. Conexión del Webhook
+
+Expón tu servidor local (puerto 5000) usando una herramienta como ngrok.
+
+En el Dashboard de Stripe, apunta el Webhook a https://tu-url.ngrok.io/webhooks/stripe.
+
+Suscríbete al evento checkout.session.completed.
+
+📈 Lógica de Negocio (Sprints)
+
+Sprint 1: Desarrollo del motor de escaneo (Scanner Core).
+
+Sprint 2: Automatización de alertas y conexión con pasarelas de pago.
+
+Sprint 3 (Próximamente): Integración profunda con Google Sheets y CRM.
+
+DM Global - DM Sentinel
