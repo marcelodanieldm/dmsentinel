@@ -1,0 +1,332 @@
+{
+  "wordpress": {
+    "core_update": {
+      "title": "Update WordPress Core to Latest Version",
+      "technical_remediation": [
+        "# Via WP-CLI (recommended for production):",
+        "wp core update --allow-root",
+        "wp core update-db --allow-root",
+        "",
+        "# Via Admin Dashboard:",
+        "Dashboard > Updates > Update WordPress",
+        "",
+        "# Manual update:",
+        "1. Download latest version: https://wordpress.org/latest.zip",
+        "2. Backup your site: wp db export backup.sql",
+        "3. Extract and replace wp-admin/ and wp-includes/",
+        "4. Run: https://yourdomain.com/wp-admin/upgrade.php"
+      ],
+      "priority": "CRITICAL",
+      "estimated_time": "5-15 minutes"
+    },
+    "plugin_update": {
+      "title": "Update Specific WordPress Plugin",
+      "technical_remediation": [
+        "# Update single plugin via WP-CLI:",
+        "wp plugin update <plugin-name> --allow-root",
+        "",
+        "# Update all plugins:",
+        "wp plugin update --all --allow-root",
+        "",
+        "# Check for available updates:",
+        "wp plugin list --update=available",
+        "",
+        "# Before updating, create backup:",
+        "wp db export backup_$(date +%Y%m%d).sql",
+        "tar -czf wp-content-backup.tar.gz wp-content/"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "2-5 minutes"
+    },
+    "security_headers": {
+      "title": "Implement Security Headers in WordPress",
+      "technical_remediation": [
+        "# Add to .htaccess (Apache):",
+        "<IfModule mod_headers.c>",
+        "    Header set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"",
+        "    Header set X-Frame-Options \"SAMEORIGIN\"",
+        "    Header set X-Content-Type-Options \"nosniff\"",
+        "    Header set X-XSS-Protection \"1; mode=block\"",
+        "    Header set Referrer-Policy \"strict-origin-when-cross-origin\"",
+        "    Header set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';\"",
+        "</IfModule>",
+        "",
+        "# Or add to wp-config.php:",
+        "header('Strict-Transport-Security: max-age=31536000; includeSubDomains');",
+        "header('X-Frame-Options: SAMEORIGIN');",
+        "header('X-Content-Type-Options: nosniff');",
+        "",
+        "# Nginx configuration:",
+        "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;",
+        "add_header X-Frame-Options \"SAMEORIGIN\" always;",
+        "add_header X-Content-Type-Options \"nosniff\" always;"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "10 minutes"
+    },
+    "disable_file_editing": {
+      "title": "Disable WordPress File Editing via Admin",
+      "technical_remediation": [
+        "# Add to wp-config.php (before 'That's all, stop editing!'):",
+        "define('DISALLOW_FILE_EDIT', true);",
+        "define('DISALLOW_FILE_MODS', true);",
+        "",
+        "# This prevents:",
+        "- Theme/plugin file editing from admin",
+        "- Plugin installation/updates from dashboard",
+        "- Reduces attack surface if admin account is compromised"
+      ],
+      "priority": "MEDIUM",
+      "estimated_time": "1 minute"
+    },
+    "remove_exposed_files": {
+      "title": "Remove Exposed Sensitive Files",
+      "technical_remediation": [
+        "# Check for exposed files:",
+        "find . -name '.env' -o -name '.git' -o -name 'wp-config.php.bak'",
+        "",
+        "# Remove .env if exists in web root:",
+        "rm -f .env",
+        "",
+        "# Remove .git repository from public directory:",
+        "rm -rf .git/",
+        "",
+        "# Remove backup files:",
+        "find . -name '*.bak' -delete",
+        "find . -name '*.old' -delete",
+        "find . -name 'backup*.sql' -delete",
+        "",
+        "# Block access via .htaccess:",
+        "<FilesMatch \"\\.(env|git|bak|sql)$\">",
+        "    Order allow,deny",
+        "    Deny from all",
+        "</FilesMatch>"
+      ],
+      "priority": "CRITICAL",
+      "estimated_time": "5 minutes"
+    }
+  },
+  "moodle": {
+    "core_update": {
+      "title": "Update Moodle LMS to Latest Version",
+      "technical_remediation": [
+        "# Backup first:",
+        "cd /var/www/moodle",
+        "tar -czf ~/moodle-backup-$(date +%Y%m%d).tar.gz .",
+        "mysqldump -u moodleuser -p moodle > ~/moodle-db-$(date +%Y%m%d).sql",
+        "",
+        "# Update via Git (recommended):",
+        "cd /var/www/moodle",
+        "git fetch",
+        "git checkout MOODLE_402_STABLE  # Replace with target version",
+        "",
+        "# Run upgrade script:",
+        "sudo -u www-data php admin/cli/upgrade.php",
+        "",
+        "# Clear cache:",
+        "sudo -u www-data php admin/cli/purge_caches.php"
+      ],
+      "priority": "CRITICAL",
+      "estimated_time": "30-60 minutes"
+    },
+    "hsts_header": {
+      "title": "Enable HSTS for Moodle",
+      "technical_remediation": [
+        "# Add to config.php:",
+        "$CFG->sslproxy = true;  // If behind reverse proxy",
+        "",
+        "# Apache .htaccess:",
+        "Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains\"",
+        "",
+        "# Nginx:",
+        "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "5 minutes"
+    },
+    "disable_dangerous_functions": {
+      "title": "Disable Dangerous PHP Functions in Moodle",
+      "technical_remediation": [
+        "# Edit php.ini:",
+        "disable_functions = exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source",
+        "",
+        "# Restart PHP-FPM:",
+        "sudo systemctl restart php8.1-fpm",
+        "",
+        "# Verify:",
+        "php -i | grep disable_functions"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "10 minutes"
+    }
+  },
+  "drupal": {
+    "core_update": {
+      "title": "Update Drupal Core via Composer",
+      "technical_remediation": [
+        "# Backup first:",
+        "drush sql-dump > ~/drupal-backup-$(date +%Y%m%d).sql",
+        "",
+        "# Update core:",
+        "composer update drupal/core drupal/core-recommended --with-dependencies",
+        "",
+        "# Run database updates:",
+        "drush updatedb",
+        "",
+        "# Clear cache:",
+        "drush cache:rebuild"
+      ],
+      "priority": "CRITICAL",
+      "estimated_time": "15-30 minutes"
+    },
+    "security_module": {
+      "title": "Install Drupal Security Review Module",
+      "technical_remediation": [
+        "# Install Security Review module:",
+        "composer require drupal/security_review",
+        "drush en security_review",
+        "",
+        "# Run security review:",
+        "drush security-review",
+        "",
+        "# Install Security Kit module:",
+        "composer require drupal/seckit",
+        "drush en seckit"
+      ],
+      "priority": "MEDIUM",
+      "estimated_time": "10 minutes"
+    }
+  },
+  "joomla": {
+    "core_update": {
+      "title": "Update Joomla Core",
+      "technical_remediation": [
+        "# Via Admin Panel:",
+        "Extensions > Manage > Update > Click Update",
+        "",
+        "# Via CLI:",
+        "cd /path/to/joomla",
+        "php cli/update.php",
+        "",
+        "# Check for updates:",
+        "php cli/update.php --check",
+        "",
+        "# Backup database first:",
+        "php cli/joomla.php database:export --all"
+      ],
+      "priority": "CRITICAL",
+      "estimated_time": "10-20 minutes"
+    },
+    "2fa_enable": {
+      "title": "Enable Two-Factor Authentication",
+      "technical_remediation": [
+        "# Enable 2FA plugin:",
+        "System > Plugins > Search 'Two Factor'",
+        "Enable 'Two Factor Authentication - YubiKey' or 'Google Authenticator'",
+        "",
+        "# Force 2FA for Super Users:",
+        "Users > Options > Two Factor Authentication = Required for Super Users"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "5 minutes"
+    }
+  },
+  "ssl": {
+    "renew_certificate": {
+      "title": "Renew SSL Certificate (Let's Encrypt)",
+      "technical_remediation": [
+        "# Check expiration:",
+        "echo | openssl s_client -servername yourdomain.com -connect yourdomain.com:443 2>/dev/null | openssl x509 -noout -dates",
+        "",
+        "# Manual renewal:",
+        "sudo certbot renew --dry-run  # Test first",
+        "sudo certbot renew",
+        "",
+        "# Auto-renewal setup:",
+        "sudo systemctl enable certbot.timer",
+        "sudo systemctl start certbot.timer",
+        "",
+        "# Reload web server:",
+        "sudo systemctl reload nginx  # or apache2"
+      ],
+      "priority": "CRITICAL",
+      "estimated_time": "5 minutes"
+    },
+    "upgrade_tls": {
+      "title": "Disable TLS 1.0/1.1, Enable TLS 1.2+",
+      "technical_remediation": [
+        "# Nginx configuration:",
+        "ssl_protocols TLSv1.2 TLSv1.3;",
+        "ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';",
+        "ssl_prefer_server_ciphers on;",
+        "",
+        "# Apache configuration:",
+        "SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1",
+        "SSLCipherSuite HIGH:!aNULL:!MD5",
+        "",
+        "# Restart:",
+        "sudo systemctl restart nginx"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "10 minutes"
+    }
+  },
+  "general": {
+    "disable_directory_listing": {
+      "title": "Disable Directory Listing",
+      "technical_remediation": [
+        "# Apache (.htaccess):",
+        "Options -Indexes",
+        "",
+        "# Nginx (server block):",
+        "autoindex off;",
+        "",
+        "# Create index.html in sensitive directories:",
+        "echo '<!DOCTYPE html><html><body>Access Denied</body></html>' > index.html"
+      ],
+      "priority": "MEDIUM",
+      "estimated_time": "2 minutes"
+    },
+    "implement_waf": {
+      "title": "Implement Web Application Firewall",
+      "technical_remediation": [
+        "# Install ModSecurity (Apache):",
+        "sudo apt install libapache2-mod-security2",
+        "sudo cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf",
+        "",
+        "# Enable SecRuleEngine:",
+        "sudo sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/modsecurity/modsecurity.conf",
+        "",
+        "# Install OWASP Core Rule Set:",
+        "cd /etc/modsecurity",
+        "sudo git clone https://github.com/coreruleset/coreruleset.git",
+        "sudo mv coreruleset/crs-setup.conf.example coreruleset/crs-setup.conf",
+        "",
+        "# Restart Apache:",
+        "sudo systemctl restart apache2"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "30 minutes"
+    },
+    "database_hardening": {
+      "title": "Database Security Hardening",
+      "technical_remediation": [
+        "# MySQL/MariaDB hardening:",
+        "sudo mysql_secure_installation",
+        "",
+        "# Create dedicated database user with limited privileges:",
+        "CREATE USER 'appuser'@'localhost' IDENTIFIED BY 'StrongPassword123!';",
+        "GRANT SELECT, INSERT, UPDATE, DELETE ON app_database.* TO 'appuser'@'localhost';",
+        "FLUSH PRIVILEGES;",
+        "",
+        "# Disable remote root login:",
+        "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');",
+        "",
+        "# Configure firewall:",
+        "sudo ufw allow from 127.0.0.1 to any port 3306"
+      ],
+      "priority": "HIGH",
+      "estimated_time": "15 minutes"
+    }
+  }
+}

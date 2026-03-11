@@ -1,0 +1,266 @@
+{
+  "wordpress": {
+    "core": {
+      "6.4.0": [
+        {
+          "cve_id": "CVE-2023-6000",
+          "severity": "HIGH",
+          "description": "Remote Code Execution via POP Chain in WordPress < 6.4.1",
+          "cvss_score": 8.8,
+          "score_impact": -30
+        }
+      ],
+      "6.3.0": [
+        {
+          "cve_id": "CVE-2023-5529",
+          "severity": "CRITICAL",
+          "description": "Unauthenticated Blind SSRF in WordPress Core",
+          "cvss_score": 9.1,
+          "score_impact": -40
+        }
+      ],
+      "5.8.0": [
+        {
+          "cve_id": "CVE-2022-21661",
+          "severity": "CRITICAL",
+          "description": "SQL Injection via WP_Query in WordPress Core",
+          "cvss_score": 9.8,
+          "score_impact": -40
+        },
+        {
+          "cve_id": "CVE-2022-21662",
+          "severity": "HIGH",
+          "description": "XXE vulnerability in Media Library XML parsing",
+          "cvss_score": 7.5,
+          "score_impact": -25
+        }
+      ],
+      "5.0.0": [
+        {
+          "cve_id": "CVE-2019-8942",
+          "severity": "CRITICAL",
+          "description": "Remote Code Execution via Post Meta",
+          "cvss_score": 9.9,
+          "score_impact": -40
+        }
+      ]
+    },
+    "plugins": {
+      "woocommerce": {
+        "7.0.0": [
+          {
+            "cve_id": "CVE-2023-28121",
+            "severity": "HIGH",
+            "description": "Authentication bypass in WooCommerce Payments",
+            "cvss_score": 8.1,
+            "score_impact": -30
+          }
+        ],
+        "5.6.0": [
+          {
+            "cve_id": "CVE-2022-45359",
+            "severity": "CRITICAL",
+            "description": "SQL Injection in WooCommerce order processing",
+            "cvss_score": 9.3,
+            "score_impact": -40
+          }
+        ]
+      },
+      "elementor": {
+        "3.6.0": [
+          {
+            "cve_id": "CVE-2022-29455",
+            "severity": "HIGH",
+            "description": "Authenticated Stored XSS in Elementor Builder",
+            "cvss_score": 7.2,
+            "score_impact": -20
+          }
+        ]
+      },
+      "yoast-seo": {
+        "19.0.0": [
+          {
+            "cve_id": "CVE-2023-1234",
+            "severity": "MEDIUM",
+            "description": "Open Redirect vulnerability in Yoast SEO",
+            "cvss_score": 6.1,
+            "score_impact": -10
+          }
+        ]
+      },
+      "contact-form-7": {
+        "5.4.0": [
+          {
+            "cve_id": "CVE-2020-35489",
+            "severity": "HIGH",
+            "description": "Unrestricted File Upload in CF7",
+            "cvss_score": 8.8,
+            "score_impact": -30
+          }
+        ]
+      }
+    }
+  },
+  "moodle": {
+    "core": {
+      "4.1.0": [
+        {
+          "cve_id": "CVE-2023-30943",
+          "severity": "HIGH",
+          "description": "Arbitrary file read via backup functionality",
+          "cvss_score": 8.6,
+          "score_impact": -30
+        }
+      ],
+      "3.11.0": [
+        {
+          "cve_id": "CVE-2022-45153",
+          "severity": "CRITICAL",
+          "description": "Remote Code Execution via LaTeX rendering",
+          "cvss_score": 9.8,
+          "score_impact": -40
+        }
+      ],
+      "3.9.0": [
+        {
+          "cve_id": "CVE-2021-36393",
+          "severity": "HIGH",
+          "description": "SQL Injection in course management",
+          "cvss_score": 8.8,
+          "score_impact": -30
+        }
+      ]
+    }
+  },
+  "drupal": {
+    "core": {
+      "10.0.0": [
+        {
+          "cve_id": "CVE-2023-25567",
+          "severity": "HIGH",
+          "description": "Access bypass in Drupal File module",
+          "cvss_score": 7.5,
+          "score_impact": -25
+        }
+      ],
+      "9.4.0": [
+        {
+          "cve_id": "CVE-2022-25277",
+          "severity": "CRITICAL",
+          "description": "Remote Code Execution via Guzzle library",
+          "cvss_score": 9.8,
+          "score_impact": -40
+        }
+      ],
+      "8.0.0": [
+        {
+          "cve_id": "CVE-2018-7600",
+          "severity": "CRITICAL",
+          "description": "Drupalgeddon2 - Remote Code Execution",
+          "cvss_score": 10.0,
+          "score_impact": -40
+        }
+      ]
+    }
+  },
+  "joomla": {
+    "core": {
+      "4.2.0": [
+        {
+          "cve_id": "CVE-2023-23752",
+          "severity": "CRITICAL",
+          "description": "Unauthenticated Information Disclosure",
+          "cvss_score": 9.8,
+          "score_impact": -40
+        }
+      ],
+      "3.9.0": [
+        {
+          "cve_id": "CVE-2020-11890",
+          "severity": "HIGH",
+          "description": "SQL Injection in com_fields component",
+          "cvss_score": 8.1,
+          "score_impact": -30
+        }
+      ]
+    }
+  },
+  "security_headers": {
+    "missing_hsts": {
+      "severity": "MEDIUM",
+      "description": "Missing Strict-Transport-Security header",
+      "cvss_score": 5.3,
+      "score_impact": -10
+    },
+    "missing_csp": {
+      "severity": "MEDIUM",
+      "description": "Missing Content-Security-Policy header",
+      "cvss_score": 5.0,
+      "score_impact": -10
+    },
+    "missing_xframe": {
+      "severity": "LOW",
+      "description": "Missing X-Frame-Options header (Clickjacking risk)",
+      "cvss_score": 4.3,
+      "score_impact": -5
+    },
+    "missing_xcontent": {
+      "severity": "LOW",
+      "description": "Missing X-Content-Type-Options header",
+      "cvss_score": 4.0,
+      "score_impact": -5
+    }
+  },
+  "exposed_files": {
+    ".env": {
+      "severity": "CRITICAL",
+      "description": "Environment configuration file exposed",
+      "cvss_score": 9.1,
+      "score_impact": -40
+    },
+    ".git/config": {
+      "severity": "HIGH",
+      "description": "Git repository configuration exposed",
+      "cvss_score": 7.5,
+      "score_impact": -25
+    },
+    "backup.zip": {
+      "severity": "HIGH",
+      "description": "Backup file publicly accessible",
+      "cvss_score": 8.0,
+      "score_impact": -25
+    },
+    "phpinfo.php": {
+      "severity": "MEDIUM",
+      "description": "PHP configuration information exposed",
+      "cvss_score": 5.3,
+      "score_impact": -10
+    },
+    "wp-config.php.bak": {
+      "severity": "CRITICAL",
+      "description": "WordPress configuration backup exposed",
+      "cvss_score": 9.8,
+      "score_impact": -40
+    }
+  },
+  "ssl_issues": {
+    "expired_certificate": {
+      "severity": "HIGH",
+      "description": "SSL/TLS certificate has expired",
+      "cvss_score": 7.5,
+      "score_impact": -25
+    },
+    "self_signed": {
+      "severity": "MEDIUM",
+      "description": "Self-signed SSL certificate detected",
+      "cvss_score": 5.3,
+      "score_impact": -10
+    },
+    "weak_cipher": {
+      "severity": "HIGH",
+      "description": "Weak cipher suite detected (TLS 1.0/1.1)",
+      "cvss_score": 7.0,
+      "score_impact": -20
+    }
+  }
+}
