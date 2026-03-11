@@ -195,14 +195,17 @@ test_reports = [
     }
 ]
 
-# Test PDF generation in multiple languages
+# Test PDF generation in ALL 5 supported languages
 languages = [
     ('es', 'Español'),
     ('en', 'English'),
-    ('fr', 'Français')
+    ('pt', 'Português'),
+    ('fr', 'Français'),
+    ('eo', 'Esperanto')
 ]
 
 print("📄 GENERANDO REPORTES PDF DE PRUEBA")
+print(f"🌍 Testing {len(languages)} languages: {', '.join([l[1] for l in languages])}")
 print()
 
 for report_info in test_reports:
@@ -246,10 +249,12 @@ print("   - test_sprint4_critical_001_*.pdf  (Score: 35/100, Grade F)")
 print("   - test_sprint4_good_002_*.pdf      (Score: 85/100, Grade A)")
 print("   - test_sprint4_perfect_003_*.pdf   (Score: 98/100, Grade A+)")
 print()
-print("🌍 Idiomas:")
+print("🌍 Idiomas (5 idiomas × 3 escenarios = 15 PDFs totales):")
 print("   - _es.pdf (Español)")
 print("   - _en.pdf (English)")
+print("   - _pt.pdf (Português)")
 print("   - _fr.pdf (Français)")
+print("   - _eo.pdf (Esperanto)")
 print()
 print("=" * 80)
 print()
