@@ -93,6 +93,14 @@ fpdf2>=2.7.0
 # weasyprint>=59.0
 # Note: WeasyPrint requires system dependencies (GTK, Pango, Cairo)
 
+# ==================== QA AUTOMATION (SPRINT 4 PROMPT 1) ====================
+
+# Playwright - Browser automation for dApp UI testing
+playwright>=1.41.0
+
+# Pytest-Playwright - Pytest integration for Playwright tests
+pytest-playwright>=0.4.4
+
 # ==================== EMAIL DELIVERY SYSTEM ====================
 
 # SMTP Email (included in Python stdlib, no installation needed)
