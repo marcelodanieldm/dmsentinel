@@ -73,6 +73,29 @@
 
 📖 **Reference**: [VULNERABILITY_REGISTRY_DOCS.md](VULNERABILITY_REGISTRY_DOCS.md) | [vulnerability_registry.py](vulnerability_registry.py)
 
+### 🔗 PDF Report Orchestration Engine
+
+```
+✓ Complete integration: Bytecode detection → Vulnerability registry → Multilingual remediation → PDF
+✓ Language detection: Auto-detect from browser Accept-Language header or IP geolocation
+✓ Bytecode analysis: SELFDESTRUCT, reentrancy, tx.origin, oracle manipulation patterns
+✓ Data flow orchestration: vuln_id lookup → technical details → actionable remediation steps
+✓ Intelligent fallback: Generic DM Global security advice when specific remediation unavailable
+✓ Multi-finding reports: Aggregate severity breakdown, executive summary, recommendations
+✓ 5 languages supported: Spanish, English, French, Portuguese, Esperanto
+✓ Production-ready: fpdf_generator.py integration, webhook handler compatible
+```
+
+📖 **Reference**: [REPORT_ORCHESTRATION_DOCS.md](REPORT_ORCHESTRATION_DOCS.md) | [report_orchestration.py](report_orchestration.py)
+
+**Example Flow**:
+```python
+# Detect SELFDESTRUCT in bytecode
+→ Lookup SWC-106 in vulnerability_registry.py (technical details + real exploits)
+→ Get Spanish remediation from remediation_engine.py (step-by-step fix)
+→ Generate PDF-ready report with complete intelligence
+```
+
 ### 🌍 Enterprise Multi-Language System
 
 ```
