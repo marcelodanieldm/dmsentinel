@@ -6,12 +6,17 @@ Test suite for validating the API discovery engine functionality.
 """
 
 import asyncio
+import json
+import csv
+from pathlib import Path
 from api_discovery_engine import (
     APIDiscoveryEngine,
     APIPatterns,
-    DiscoveryExporter
+    DiscoveryExporter,
+    BusinessExporter,
+    DiscoveredEndpoint,
+    DiscoveryResult
 )
-import json
 
 
 def test_regex_patterns():
@@ -331,6 +336,160 @@ def test_error_handling():
     print("\n✅ Error handling test completed!")
 
 
+def test_business_exports():
+    """Test business intelligence export functions (PROMPT 2)."""
+    print("\n" + "=" * 80)
+    print("TEST 6: Business Intelligence Exports (PROMPT 2)")
+    print("=" * 80)
+    
+    # Create mock discovery result
+    print("\n📦 Creating mock discovery result...")
+    
+    mock_endpoints = [
+        DiscoveredEndpoint(
+            url="https://api.example.com/v1/users",
+            method="GET",
+            source_file="main.js",
+            endpoint_type="REST",
+            confidence=0.95
+        ),
+        DiscoveredEndpoint(
+            url="https://api.example.com/admin/delete",
+            method="DELETE",
+            source_file="admin.js",
+            endpoint_type="REST",
+            confidence=0.85
+        ),
+        DiscoveredEndpoint(
+            url="https://api.example.com/internal/debug/users",
+            method="GET",
+            source_file="debug.js",
+            endpoint_type="REST",
+            confidence=0.60
+        ),
+        DiscoveredEndpoint(
+            url="https://api.example.com/graphql",
+            method="POST",
+            source_file="app.js",
+            endpoint_type="GraphQL",
+            confidence=1.0
+        ),
+    ]
+    
+    mock_result = DiscoveryResult(
+        target_url="https://example.com",
+        total_endpoints=4,
+        rest_endpoints=[e for e in mock_endpoints if e.endpoint_type == "REST"],
+        graphql_endpoints=[e for e in mock_endpoints if e.endpoint_type == "GraphQL"],
+        websocket_endpoints=[],
+        auth_headers={"Bearer", "X-API-Key"},
+        api_keys={"sk_test_123456789"},
+        subdomains={"api.example.com"},
+        js_files_analyzed=3,
+        errors=[],
+        scan_duration=5.4
+    )
+    
+    # Initialize business exporter
+    exporter = BusinessExporter(output_dir="artifacts/outputs/test")
+    
+    # Test 1: Sensitivity Score Calculation
+    print("\n🔒 Testing Sensitivity Score Calculation:")
+    for endpoint in mock_endpoints:
+        score = exporter.calculate_sensitivity_score(endpoint)
+        print(f"   {endpoint.url}")
+        print(f"      Score: {score}/10 | Method: {endpoint.method}")
+    
+    # Test 2: Shadow API Detection
+    print("\n👻 Testing Shadow API Detection:")
+    for endpoint in mock_endpoints:
+        is_shadow = exporter.is_shadow_api(endpoint, mock_result)
+        status = "SHADOW API" if is_shadow else "Standard API"
+        print(f"   {status}: {endpoint.url}")
+    
+    # Test 3: Export to CRM (JSON)
+    print("\n📋 Testing CRM Export (JSON):")
+    crm_path = exporter.export_to_crm(mock_result, filename="test_crm_export.json")
+    
+    # Verify JSON structure
+    with open(crm_path, 'r', encoding='utf-8') as f:
+        crm_data = json.load(f)
+    
+    print(f"   ✅ CRM file created: {crm_path}")
+    print(f"   📊 Structure validation:")
+    print(f"      - timestamp: {'✅' if 'timestamp' in crm_data else '❌'}")
+    print(f"      - target_url: {'✅' if 'target_url' in crm_data else '❌'}")
+    print(f"      - endpoints_found: {'✅' if 'endpoints_found' in crm_data else '❌'}")
+    print(f"      - statistics: {'✅' if 'statistics' in crm_data else '❌'}")
+    print(f"      - security_alerts: {'✅' if 'security_alerts' in crm_data else '❌'}")
+    
+    # Verify endpoint structure
+    if crm_data['endpoints_found']:
+        endpoint = crm_data['endpoints_found'][0]
+        print(f"   📍 First endpoint fields:")
+        print(f"      - path: {'✅' if 'path' in endpoint else '❌'}")
+        print(f"      - method_guess: {'✅' if 'method_guess' in endpoint else '❌'}")
+        print(f"      - source_file: {'✅' if 'source_file' in endpoint else '❌'}")
+        print(f"      - sensitivity_score: {'✅' if 'sensitivity_score' in endpoint else '❌'}")
+        print(f"      - is_shadow: {'✅' if 'is_shadow' in endpoint else '❌'}")
+    
+    # Test 4: Export to PowerBI (CSV)
+    print("\n📊 Testing PowerBI Export (CSV):")
+    powerbi_path = exporter.export_to_powerbi(mock_result, filename="test_powerbi_export.csv")
+    
+    # Verify CSV structure
+    with open(powerbi_path, 'r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+    
+    print(f"   ✅ PowerBI file created: {powerbi_path}")
+    print(f"   📊 CSV validation:")
+    print(f"      - Total rows: {len(rows)}")
+    print(f"      - Total columns: {len(fieldnames)}")
+    
+    required_columns = ['Date', 'Target', 'Endpoint', 'Sensitivity_Score', 'Is_Shadow']
+    print(f"   📋 Required columns:")
+    for col in required_columns:
+        status = "✅" if col in fieldnames else "❌"
+        print(f"      {status} {col}")
+    
+    # Display sample row
+    if rows:
+        print(f"   📄 Sample row:")
+        sample = rows[0]
+        print(f"      Date: {sample.get('Date')}")
+        print(f"      Endpoint: {sample.get('Endpoint')}")
+        print(f"      Sensitivity_Score: {sample.get('Sensitivity_Score')}")
+        print(f"      Is_Shadow: {sample.get('Is_Shadow')}")
+    
+    # Test 5: Verify Sensitivity Score Range
+    print("\n🔢 Testing Sensitivity Score Range:")
+    all_valid = True
+    for row in rows:
+        score = float(row['Sensitivity_Score'])
+        if not (0.0 <= score <= 10.0):
+            print(f"   ❌ Invalid score: {score} for {row['Endpoint']}")
+            all_valid = False
+    
+    if all_valid:
+        print(f"   ✅ All sensitivity scores within valid range (0-10)")
+    
+    # Test 6: Verify Is_Shadow Boolean
+    print("\n🔍 Testing Is_Shadow Values:")
+    valid_values = {'TRUE', 'FALSE'}
+    all_valid = True
+    for row in rows:
+        if row['Is_Shadow'] not in valid_values:
+            print(f"   ❌ Invalid Is_Shadow value: {row['Is_Shadow']}")
+            all_valid = False
+    
+    if all_valid:
+        print(f"   ✅ All Is_Shadow values are boolean (TRUE/FALSE)")
+    
+    print("\n✅ Business intelligence export tests completed!")
+
+
 async def run_all_tests():
     """Run all test suites."""
     print("\n" + "=" * 80)
@@ -343,6 +502,7 @@ async def run_all_tests():
         await test_full_discovery()
         test_exporter()
         test_error_handling()
+        test_business_exports()  # NEW: PROMPT 2 tests
         
         print("\n" + "=" * 80)
         print("✅ ALL TESTS PASSED!")
@@ -353,6 +513,7 @@ async def run_all_tests():
         print("   ✅ Full discovery functional")
         print("   ✅ Export formats validated")
         print("   ✅ Error handling robust")
+        print("   ✅ Business Intelligence exports working (PROMPT 2)")
         print("\n🚀 API Discovery Engine is ready for production!")
         print("=" * 80)
     

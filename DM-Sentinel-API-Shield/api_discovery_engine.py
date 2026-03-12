@@ -19,15 +19,20 @@ Version: 1.0
 
 import asyncio
 import re
+import csv
+import json
+import os
 from typing import List, Dict, Set, Optional, Tuple
 from dataclasses import dataclass, field
 from urllib.parse import urljoin, urlparse, urlencode
+from datetime import datetime
 import aiohttp
 from aiohttp import ClientSession, ClientTimeout, ClientError
 from bs4 import BeautifulSoup
 import logging
 from concurrent.futures import ThreadPoolExecutor
 import time
+from pathlib import Path
 
 
 # ============================================================================
@@ -708,11 +713,352 @@ class DiscoveryExporter:
 
 
 # ============================================================================
+# BUSINESS INTELLIGENCE EXPORT (PROMPT 2)
+# ============================================================================
+
+class BusinessExporter:
+    """
+    Export API discovery results for business intelligence tools.
+    
+    PROMPT 2: Estructuración de Inteligencia (Fullstack + Data Analyst)
+    - export_to_crm(): JSON for CRM systems
+    - export_to_powerbi(): CSV for PowerBI dashboards
+    - Sensitivity scoring based on endpoint depth
+    - Shadow API detection
+    """
+    
+    def __init__(self, output_dir: str = "artifacts/outputs"):
+        """Initialize exporter with output directory."""
+        self.output_dir = Path(output_dir)
+        self._ensure_output_dir()
+    
+    def _ensure_output_dir(self) -> None:
+        """Create output directory if it doesn't exist."""
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"📁 Output directory ready: {self.output_dir}")
+    
+    @staticmethod
+    def calculate_sensitivity_score(endpoint: DiscoveredEndpoint) -> float:
+        """
+        Calculate sensitivity score based on endpoint characteristics.
+        
+        Scoring factors:
+        1. Path depth (deeper paths = higher sensitivity)
+        2. Sensitive keywords (auth, admin, user, payment, etc.)
+        3. HTTP method (DELETE/PUT = higher sensitivity)
+        4. Parameter presence
+        
+        Returns:
+            float: Score from 0.0 (low) to 10.0 (high)
+        """
+        score = 0.0
+        
+        # Parse URL path
+        parsed = urlparse(endpoint.url)
+        path = parsed.path.lower()
+        path_segments = [s for s in path.split('/') if s]
+        
+        # Factor 1: Path depth (0-3 points)
+        # Deeper paths often contain more specific/sensitive operations
+        depth = len(path_segments)
+        if depth <= 2:
+            score += 0.5 * depth
+        elif depth <= 4:
+            score += 1.0 + (depth - 2) * 0.5
+        else:
+            score += 2.0 + min(depth - 4, 3) * 0.3
+        
+        # Factor 2: Sensitive keywords (0-4 points)
+        sensitive_keywords = {
+            'admin': 2.0,
+            'password': 2.0,
+            'secret': 2.0,
+            'token': 1.5,
+            'auth': 1.5,
+            'login': 1.0,
+            'user': 1.0,
+            'payment': 2.0,
+            'billing': 1.5,
+            'card': 2.0,
+            'account': 1.0,
+            'profile': 0.5,
+            'settings': 0.5,
+            'config': 1.0,
+            'internal': 1.5,
+            'private': 1.5,
+            'delete': 1.5,
+            'remove': 1.0,
+        }
+        
+        keyword_score = 0.0
+        for keyword, points in sensitive_keywords.items():
+            if keyword in path:
+                keyword_score = max(keyword_score, points)
+        score += keyword_score
+        
+        # Factor 3: HTTP method sensitivity (0-2 points)
+        method_scores = {
+            'DELETE': 2.0,
+            'PUT': 1.5,
+            'PATCH': 1.5,
+            'POST': 1.0,
+            'GET': 0.5,
+            'UNKNOWN': 0.0
+        }
+        score += method_scores.get(endpoint.method.upper(), 0.0)
+        
+        # Factor 4: Parameters (0-1 point)
+        if endpoint.parameters:
+            score += min(len(endpoint.parameters) * 0.2, 1.0)
+        
+        # Factor 5: Auth headers present (0-1 point)
+        if endpoint.auth_headers:
+            score += 1.0
+        
+        # Normalize to 0-10 scale
+        return min(round(score, 2), 10.0)
+    
+    @staticmethod
+    def is_shadow_api(endpoint: DiscoveredEndpoint, result: DiscoveryResult) -> bool:
+        """
+        Determine if an endpoint is a Shadow API.
+        
+        A Shadow API is one that:
+        1. Lacks proper documentation (found via client-side scraping)
+        2. Uses non-standard paths
+        3. Has low confidence score
+        4. Contains internal/debug keywords
+        
+        Args:
+            endpoint: The discovered endpoint
+            result: The full discovery result for context
+        
+        Returns:
+            bool: True if likely a Shadow API
+        """
+        path = endpoint.url.lower()
+        
+        # Keywords that suggest undocumented/internal APIs
+        shadow_indicators = [
+            'internal', 'debug', 'test', 'dev', 'staging',
+            'private', 'temp', 'tmp', 'old', 'legacy',
+            'backup', 'admin', 'hidden', 'secret'
+        ]
+        
+        # Check for shadow indicators
+        has_shadow_keyword = any(keyword in path for keyword in shadow_indicators)
+        
+        # Low confidence suggests it's not well-documented
+        low_confidence = endpoint.confidence < 0.7
+        
+        # Non-standard versioning or paths
+        has_nonstandard_path = bool(re.search(r'/(v0|alpha|beta|test|dev)/', path))
+        
+        # Combine factors
+        return has_shadow_keyword or (low_confidence and has_nonstandard_path)
+    
+    def export_to_crm(self, result: DiscoveryResult, filename: Optional[str] = None) -> str:
+        """
+        Export API discovery results to JSON format for CRM systems.
+        
+        Output structure:
+        {
+            "timestamp": "2026-03-11T12:34:56",
+            "target_url": "https://example.com",
+            "endpoints_found": [
+                {
+                    "path": "/api/v1/users",
+                    "method_guess": "GET",
+                    "source_file": "main.js",
+                    "endpoint_type": "REST",
+                    "confidence": 0.95,
+                    "sensitivity_score": 3.5,
+                    "is_shadow": false
+                }
+            ],
+            "statistics": {
+                "total_endpoints": 42,
+                "rest_endpoints": 38,
+                "graphql_endpoints": 3,
+                "websocket_endpoints": 1,
+                "js_files_analyzed": 15,
+                "scan_duration": 12.4
+            },
+            "security_alerts": {
+                "exposed_api_keys": 2,
+                "shadow_apis_found": 8,
+                "high_sensitivity_endpoints": 5
+            }
+        }
+        
+        Args:
+            result: DiscoveryResult object
+            filename: Optional custom filename
+        
+        Returns:
+            str: Path to exported file
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        if filename is None:
+            filename = f"crm_export_{timestamp}.json"
+        
+        # Combine all endpoints
+        all_endpoints = (
+            result.rest_endpoints + 
+            result.graphql_endpoints + 
+            result.websocket_endpoints
+        )
+        
+        # Build endpoints list with business intelligence
+        endpoints_data = []
+        shadow_count = 0
+        high_sensitivity_count = 0
+        
+        for endpoint in all_endpoints:
+            sensitivity = self.calculate_sensitivity_score(endpoint)
+            is_shadow = self.is_shadow_api(endpoint, result)
+            
+            if is_shadow:
+                shadow_count += 1
+            if sensitivity >= 7.0:
+                high_sensitivity_count += 1
+            
+            endpoints_data.append({
+                'path': endpoint.url,
+                'method_guess': endpoint.method,
+                'source_file': endpoint.source_file or 'unknown',
+                'endpoint_type': endpoint.endpoint_type,
+                'confidence': round(endpoint.confidence, 2),
+                'sensitivity_score': sensitivity,
+                'is_shadow': is_shadow
+            })
+        
+        # Build CRM export structure
+        crm_data = {
+            'timestamp': datetime.now().isoformat(),
+            'target_url': result.target_url,
+            'endpoints_found': endpoints_data,
+            'statistics': {
+                'total_endpoints': result.total_endpoints,
+                'rest_endpoints': len(result.rest_endpoints),
+                'graphql_endpoints': len(result.graphql_endpoints),
+                'websocket_endpoints': len(result.websocket_endpoints),
+                'js_files_analyzed': result.js_files_analyzed,
+                'scan_duration': round(result.scan_duration, 2)
+            },
+            'security_alerts': {
+                'exposed_api_keys': len(result.api_keys),
+                'shadow_apis_found': shadow_count,
+                'high_sensitivity_endpoints': high_sensitivity_count
+            }
+        }
+        
+        # Write to file
+        output_path = self.output_dir / filename
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(crm_data, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"✅ CRM export saved: {output_path}")
+        logger.info(f"   📊 Total endpoints: {result.total_endpoints}")
+        logger.info(f"   ⚠️  Shadow APIs: {shadow_count}")
+        logger.info(f"   🔒 High sensitivity: {high_sensitivity_count}")
+        
+        return str(output_path)
+    
+    def export_to_powerbi(self, result: DiscoveryResult, filename: Optional[str] = None) -> str:
+        """
+        Export API discovery results to CSV format for PowerBI dashboards.
+        
+        CSV Columns:
+        - Date: Scan date (YYYY-MM-DD)
+        - Target: Target URL scanned
+        - Endpoint: Full endpoint URL
+        - Method: HTTP method (GET, POST, etc.)
+        - Type: Endpoint type (REST, GraphQL, WebSocket)
+        - Source_File: JavaScript file where endpoint was found
+        - Sensitivity_Score: 0-10 score based on endpoint sensitivity
+        - Is_Shadow: Boolean indicating if it's a Shadow API
+        - Confidence: Detection confidence (0.0-1.0)
+        - Path_Depth: Number of path segments
+        
+        Args:
+            result: DiscoveryResult object
+            filename: Optional custom filename
+        
+        Returns:
+            str: Path to exported file
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        if filename is None:
+            filename = f"powerbi_export_{timestamp}.csv"
+        
+        # Combine all endpoints
+        all_endpoints = (
+            result.rest_endpoints + 
+            result.graphql_endpoints + 
+            result.websocket_endpoints
+        )
+        
+        # Prepare CSV data
+        output_path = self.output_dir / filename
+        
+        with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = [
+                'Date',
+                'Target',
+                'Endpoint',
+                'Method',
+                'Type',
+                'Source_File',
+                'Sensitivity_Score',
+                'Is_Shadow',
+                'Confidence',
+                'Path_Depth'
+            ]
+            
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            # Write each endpoint
+            scan_date = datetime.now().strftime("%Y-%m-%d")
+            
+            for endpoint in all_endpoints:
+                # Calculate metrics
+                sensitivity = self.calculate_sensitivity_score(endpoint)
+                is_shadow = self.is_shadow_api(endpoint, result)
+                
+                # Calculate path depth
+                parsed = urlparse(endpoint.url)
+                path_depth = len([s for s in parsed.path.split('/') if s])
+                
+                # Write row
+                writer.writerow({
+                    'Date': scan_date,
+                    'Target': result.target_url,
+                    'Endpoint': endpoint.url,
+                    'Method': endpoint.method,
+                    'Type': endpoint.endpoint_type,
+                    'Source_File': endpoint.source_file or 'unknown',
+                    'Sensitivity_Score': sensitivity,
+                    'Is_Shadow': str(is_shadow).upper(),  # TRUE/FALSE for PowerBI
+                    'Confidence': round(endpoint.confidence, 2),
+                    'Path_Depth': path_depth
+                })
+        
+        logger.info(f"✅ PowerBI export saved: {output_path}")
+        logger.info(f"   📊 Total rows: {len(all_endpoints)}")
+        
+        return str(output_path)
+
+
+# ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
 
 async def main():
-    """Example usage of API Discovery Engine."""
+    """Example usage of API Discovery Engine with Business Intelligence exports."""
     
     print("=" * 80)
     print("🛡️  DM SENTINEL API SHIELD - API DISCOVERY ENGINE")
@@ -730,9 +1076,15 @@ async def main():
     )
     
     # Run discovery
+    print("🔍 Starting API discovery...")
     result = await engine.discover_apis(target)
     
     # Print results
+    print(f"\n📊 Discovery Complete!")
+    print(f"   Total endpoints found: {result.total_endpoints}")
+    print(f"   JS files analyzed: {result.js_files_analyzed}")
+    print(f"   Scan duration: {result.scan_duration:.2f}s")
+    
     if result.rest_endpoints:
         print("\n📍 Top 10 Discovered REST Endpoints:")
         for i, endpoint in enumerate(result.rest_endpoints[:10], 1):
@@ -748,15 +1100,53 @@ async def main():
     if result.api_keys:
         print(f"\n⚠️  WARNING: {len(result.api_keys)} exposed API keys found!")
     
-    # Export results
-    import json
+    # ========================================================================
+    # EXPORT TO BUSINESS INTELLIGENCE FORMATS (PROMPT 2)
+    # ========================================================================
+    
+    print("\n" + "=" * 80)
+    print("📤 EXPORTING TO BUSINESS INTELLIGENCE FORMATS")
+    print("=" * 80)
+    
+    # Initialize business exporter
+    business_exporter = BusinessExporter(output_dir="artifacts/outputs")
+    
+    # Export to CRM (JSON format)
+    print("\n📋 Exporting to CRM format (JSON)...")
+    crm_path = business_exporter.export_to_crm(result)
+    print(f"   ✅ CRM export: {crm_path}")
+    
+    # Export to PowerBI (CSV format)
+    print("\n📊 Exporting to PowerBI format (CSV)...")
+    powerbi_path = business_exporter.export_to_powerbi(result)
+    print(f"   ✅ PowerBI export: {powerbi_path}")
+    
+    # Traditional exports (for backwards compatibility)
+    print("\n📄 Exporting traditional formats...")
     exporter = DiscoveryExporter()
+    
+    # JSON export
     json_result = exporter.to_json(result)
+    json_path = Path("artifacts/outputs/api_discovery_result.json")
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(json_result, f, indent=2, ensure_ascii=False)
+    print(f"   ✅ JSON export: {json_path}")
     
-    with open('api_discovery_result.json', 'w') as f:
-        json.dump(json_result, f, indent=2)
+    # Markdown export
+    md_content = exporter.to_markdown(result)
+    md_path = Path("artifacts/outputs/api_discovery_report.md")
+    with open(md_path, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+    print(f"   ✅ Markdown report: {md_path}")
     
-    print("\n✅ Results exported to: api_discovery_result.json")
+    print("\n" + "=" * 80)
+    print("✅ ALL EXPORTS COMPLETE!")
+    print("=" * 80)
+    print(f"\n📁 Output directory: artifacts/outputs/")
+    print(f"   - CRM (JSON): For business intelligence & CRM systems")
+    print(f"   - PowerBI (CSV): For dashboard visualization & analytics")
+    print(f"   - Standard JSON: For technical integration")
+    print(f"   - Markdown: For human-readable reports")
     print("=" * 80)
 
 
