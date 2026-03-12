@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/shield-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO Meta Tags -->
+    <title>DM Sentinel - Web3 Security Audits | AI-Powered Smart Contract Analysis</title>
+    <meta name="description" content="Professional Web3 security audits with AI-powered analysis. Protect your Smart Contracts with Slither, Mythril, and GPT-4. QA automation, market intelligence, and Power BI dashboards." />
+    <meta name="keywords" content="web3, security, audit, smart contract, defi, blockchain, ethereum, polygon, solidity, security audit, penetration testing" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://dmsentinel.com/" />
+    <meta property="og:title" content="DM Sentinel - Web3 Security Audits" />
+    <meta property="og:description" content="AI-Powered Smart Contract Security Audits. Protect your DeFi protocol before deployment." />
+    <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://dmsentinel.com/" />
+    <meta property="twitter:title" content="DM Sentinel - Web3 Security Audits" />
+    <meta property="twitter:description" content="AI-Powered Smart Contract Security Audits. Protect your DeFi protocol before deployment." />
+    <meta property="twitter:image" content="/twitter-image.png" />
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Fira Code for Terminal -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+      /* Prevent FOUC (Flash of Unstyled Content) */
+      body {
+        margin: 0;
+        padding: 0;
+        background: #050A14;
+        color: white;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Loading spinner */
+      .loading-spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(0, 212, 255, 0.1);
+        border-top: 4px solid #00D4FF;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="loading-spinner"></div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
