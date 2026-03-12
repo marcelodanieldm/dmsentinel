@@ -1,0 +1,271 @@
+# DM Sentinel API Shield Configuration
+# YAML configuration file for detailed settings
+
+# Server Settings
+server:
+  host: 0.0.0.0
+  port: 8080
+  workers: 4
+  timeout: 30
+  max_request_size: 10485760  # 10MB
+  
+# Rate Limiting Configuration
+rate_limiting:
+  enabled: true
+  algorithm: sliding_window  # Options: token_bucket, sliding_window, fixed_window
+  
+  # Default limits
+  default:
+    limit: 100  # requests per minute
+    burst: 20
+    window: 60  # seconds
+  
+  # Per-endpoint limits
+  endpoints:
+    "/api/data":
+      limit: 50
+      window: 60
+    
+    "/api/admin":
+      limit: 10
+      window: 60
+    
+    "/api/search":
+      limit: 200
+      window: 60
+  
+  # Per-tier limits
+  tiers:
+    basic:
+      limit: 100
+      burst: 20
+    
+    professional:
+      limit: 1000
+      burst: 100
+    
+    enterprise:
+      limit: 10000
+      burst: 500
+
+# Authentication Configuration
+authentication:
+  jwt:
+    enabled: true
+    secret: ${JWT_SECRET}
+    algorithm: HS256
+    expiration_hours: 24
+    refresh_enabled: true
+    refresh_expiration_days: 30
+  
+  api_key:
+    enabled: true
+    prefix: dmsk_
+    length: 32
+    rotation_days: 90
+  
+  oauth:
+    enabled: false
+    providers:
+      - google
+      - github
+
+# Threat Detection Configuration
+threat_detection:
+  enabled: true
+  
+  # Pattern-based detection
+  sql_injection:
+    enabled: true
+    block_on_detect: true
+    log_attempts: true
+  
+  nosql_injection:
+    enabled: true
+    block_on_detect: true
+  
+  command_injection:
+    enabled: true
+    block_on_detect: true
+  
+  path_traversal:
+    enabled: true
+    block_on_detect: true
+  
+  xss:
+    enabled: true
+    block_on_detect: false  # Just log
+  
+  # Machine Learning detection
+  anomaly_detection:
+    enabled: false
+    model: isolation_forest
+    sensitivity: 0.8
+    training_samples: 10000
+  
+  # Behavioral analysis
+  behavioral:
+    enabled: true
+    suspicious_user_agent: true
+    rapid_endpoint_switching: true
+    unusual_geographic_access: true
+
+# OWASP API Security Top 10 Protection
+owasp_protection:
+  api1_broken_object_authorization:
+    enabled: true
+    check_resource_ownership: true
+  
+  api2_broken_authentication:
+    enabled: true
+    enforce_strong_passwords: true
+    mfa_required: false
+  
+  api4_unrestricted_resource_consumption:
+    enabled: true
+    max_request_size: 10485760
+    max_array_size: 1000
+  
+  api7_ssrf:
+    enabled: true
+    whitelist_domains:
+      - api.dmglobal.com
+      - secure.dmsentinel.com
+
+# Monitoring & Logging
+monitoring:
+  enabled: true
+  
+  prometheus:
+    enabled: true
+    port: 9090
+    metrics:
+      - request_count
+      - request_duration
+      - error_rate
+      - rate_limit_hits
+      - threats_detected
+  
+  logging:
+    level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    format: json
+    output: stdout  # Options: stdout, file, syslog
+    file_path: /var/log/api-shield.log
+    max_size_mb: 100
+    backup_count: 5
+  
+  tracing:
+    enabled: false
+    provider: jaeger
+    endpoint: http://localhost:14268/api/traces
+
+# Alerting
+alerting:
+  enabled: true
+  
+  channels:
+    slack:
+      enabled: false
+      webhook_url: ${SLACK_WEBHOOK_URL}
+    
+    email:
+      enabled: true
+      smtp_host: smtp.gmail.com
+      smtp_port: 587
+      from: alerts@dmglobal.com
+      to:
+        - security@dmglobal.com
+    
+    pagerduty:
+      enabled: false
+      integration_key: ${PAGERDUTY_KEY}
+  
+  rules:
+    - name: high_rate_limit_violations
+      condition: rate_limit_violations > 100 in 5min
+      severity: warning
+      channels: [email]
+    
+    - name: sql_injection_detected
+      condition: sql_injection_attempts > 0
+      severity: critical
+      channels: [email, slack]
+    
+    - name: api_error_rate_high
+      condition: error_rate > 5% in 10min
+      severity: warning
+      channels: [email]
+
+# Redis Configuration
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  password: null
+  ssl: false
+  pool_size: 10
+  socket_timeout: 5
+
+# Database Configuration (for analytics)
+database:
+  enabled: true
+  url: postgresql://user:password@localhost:5432/api_shield
+  pool_size: 20
+  echo: false
+
+# CORS Configuration
+cors:
+  allow_origins:
+    - "*"
+  allow_methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - PATCH
+  allow_headers:
+    - "*"
+  allow_credentials: true
+  max_age: 3600
+
+# Geographic Restrictions
+geo_blocking:
+  enabled: false
+  mode: blacklist  # Options: whitelist, blacklist
+  blacklist:
+    - CN
+    - RU
+  whitelist:
+    - US
+    - EU
+
+# Custom Security Rules
+custom_rules:
+  - name: block_tor_exit_nodes
+    enabled: false
+    action: block
+  
+  - name: require_user_agent
+    enabled: true
+    action: block
+  
+  - name: block_automated_tools
+    enabled: true
+    patterns:
+      - curl
+      - wget
+      - python-requests
+    action: log  # Options: log, block
+
+# Caching
+caching:
+  enabled: true
+  ttl: 300  # seconds
+  max_size: 1000
+
+# Performance
+performance:
+  compression: true
+  http2: true
+  connection_pooling: true
+  keep_alive_timeout: 65
