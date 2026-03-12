@@ -1,1333 +1,1197 @@
-# 🛡️ DM Sentinel v3.0 - Enterprise Security Audit Platform
+<div align="center">
 
-![Version](https://img.shields.io/badge/version-3.0-blue)
-![Python](https://img.shields.io/badge/python-3.9+-green)
-![License](https://img.shields.io/badge/license-MIT-orange)
-![Languages](https://img.shields.io/badge/languages-5-brightgreen)
+# 🛡️ DM Sentinel
 
-**DM Sentinel** es la división de ciberseguridad proactiva de DM Global. Plataforma enterprise de auditoría automatizada de seguridad para CMS/LMS con inteligencia avanzada, soporte multiidioma, integración con Google Sheets, generación de PDFs, API REST y tracking histórico.
+### Enterprise-Grade Automated Security Audit Platform
 
----
+**AI-Powered Web3 & CMS/LMS Security Audits with Real-Time Intelligence**
 
-## 🚀 Características v3.0
+[![Version](https://img.shields.io/badge/version-3.0-blue.svg)](https://github.com/marcelodanieldm/dmsentinel)
+[![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
+[![Flask](https://img.shields.io/badge/flask-3.0+-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![Languages](https://img.shields.io/badge/languages-5-brightgreen.svg)](docs/i18n.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-### 🔍 Motor de Auditoría Avanzado
-- **10 módulos de análisis especializados**: SSL/TLS, DNS/Email, Cookies, Headers, Formularios, Stack Tecnológico, Hardening de Servidor
-- **Detección inteligente de CMS**: WordPress, Drupal, Joomla, Moodle con versiones específicas
-- **Base de datos de vulnerabilidades**: 200+ CVEs con scoring CVSS
-- **Base de datos de remediaciones**: 40+ guías técnicas con comandos específicos
-- **Sistema de scoring ponderado**: Multiplicadores por criticidad (2.0x para credenciales expuestas, 1.8x para RCE)
-- **Análisis de superficie de ataque**: Escaneo de archivos expuestos, plugins vulnerables, métodos HTTP inseguros
-
-### 🌍 Sistema Multiidioma
-- **5 idiomas soportados**: Español, Inglés, Francés, Portugués, Esperanto
-- **Traducción completa**: UI, reportes, API responses, PDFs, historiales
-- **Detección automática**: Por dominio/URL del target
-- **Sistema i18n modular**: Archivos JSON por idioma con arquitectura escalable
-
-### 📊 Google Sheets Integration
-- **Export automático** de reportes con formato profesional
-- **Dashboards interactivos** con código de colores por severidad
-- **Tracking histórico** en worksheet separado
-- **Autenticación OAuth2** vía Service Account
-- **Formato condicional** automático basado en scores
-
-### 📄 Generación de PDFs
-- **Reportes profesionales** con branding DM Sentinel
-- **Gráficos interactivos**: Pie charts de distribución de vulnerabilidades
-- **Secciones estructuradas**: Executive Summary, Vulnerabilidades, Recomendaciones, Detalles Técnicos
-- **Código de colores** por severidad y score
-- **Header/Footer** con paginación automática
-- **Soporte multiidioma** completo
-
-### 🌐 REST API Interface
-- **Endpoints RESTful** para integraciones externas
-- **Make.com ready**: Webhooks para automatización
-- **Autenticación**: API Keys con header `X-API-Key`
-- **Endpoints disponibles**:
-  - `POST /api/v3/scan` - Iniciar auditoría
-  - `GET /api/v3/scan/{scan_id}` - Estado de scan
-  - `GET /api/v3/report/{scan_id}` - Obtener reporte
-  - `POST /api/v3/multi-scan` - Escaneo batch
-  - `GET /api/v3/history/{target}` - Historial
-  - `GET /api/v3/export/{scan_id}/{format}` - Export JSON/PDF
-
-### 🔄 Multi-Target Scanner
-- **Escaneo concurrente** con ThreadPoolExecutor
-- **Configuración de workers**: 1-10 threads simultáneos
-- **Agregación inteligente** de resultados
-- **Reportes consolidados**: Scores promedio, targets de alto riesgo, estadísticas globales
-- **Progress tracking** en tiempo real
-- **Manejo robusto de errores** por target
-
-### 📈 Historical Tracking System
-- **Base de datos SQLite** para persistencia
-- **Trending analysis**: Comparación de scans en el tiempo
-- **Visualización de tendencias**: Mejorando, estable, degradando
-- **Alertas automáticas** por degradación de score
-- **Reportes de delta**: Vulnerabilidades nuevas vs resueltas
-- **Estadísticas**: Score promedio, volatilidad, overall trend
-
-### 💳 Multi-Gateway Payment System (NEW v3.0)
-- **3 Pricing Tiers**: Check-up ($49 one-time), Sentinel ($19/month), Sentinel Pro ($99/month)
-- **Stripe Integration**: Credit/debit cards + subscriptions with recurring billing
-- **Mercado Pago + PIX**: Instant payments for Brazil and Latin America
-- **USDC Cryptocurrency**: Blockchain payments for Web3 community
-- **Subscription Support**: Automatic monthly audits with invoice.payment_succeeded events
-- **Webhook Automation**: Non-blocking architecture with threading
-- **CRM Tracking**: Google Sheets integration for subscription status and payment mode
-- **Email Delivery**: Automated PDF reports sent to clients after payment
-- **Multi-language Landing Page**: Cyber-dark design with 5-language support
-
-### 📧 Email Delivery System (Sprint 4)
-- **SMTP/TLS Integration**: Gmail App Password support
-- **HTML Email Templates**: Professional branding with 5-language support
-- **PDF Attachments**: Automated report delivery after audit completion
-- **Non-blocking Architecture**: Email failures don't stop workflow
-- **Color-coded Reports**: Score badges and risk-level indicators
+[🌐 Website](https://dmsentinel.com) • [📖 Documentation](#-documentation) • [💼 Business Model](#-business-model) • [🚀 Quick Start](#-quick-start) • [🐛 Report Bug](https://github.com/marcelodanieldm/dmsentinel/issues)
 
 ---
 
-## 🛠️ Stack Tecnológico
+**DM Sentinel** is the proactive cybersecurity division of **DM Global**, providing enterprise-grade automated security audits for CMS/LMS platforms and Web3 smart contracts. Combining advanced vulnerability detection, AI-powered analysis, multi-gateway payment processing, and real-time threat intelligence.
 
-| Categoría | Tecnología |
-|-----------|-----------|
-| **Lenguaje** | Python 3.9+ |
-| **Framework Web** | Flask 3.0+ |
-| **Análisis DNS** | dnspython 2.4+ |
-| **HTML Parsing** | BeautifulSoup4 4.12+ |
-| **PDF Generation** | ReportLab 4.0+ |
-| **Google Sheets** | gspread 5.11+, oauth2client 4.1+ |
-| **Base de Datos** | SQLite (stdlib) |
-| **Concurrencia** | concurrent.futures (stdlib) |
-| **API REST** | Flask + Werkzeug |
-| **i18n** | JSON-based translation system |
+**🎯 Mission**: Democratize enterprise-level security audits for businesses of all sizes through automation, AI, and transparent pricing.
+
+</div>
 
 ---
 
-## 📦 Instalación
+## 📑 Table of Contents
 
-### Requisitos Previos
-- Python 3.9 o superior
-- pip (gestor de paquetes Python)
-- Git
+- [✨ Key Features](#-key-features)
+- [🎯 Quick Start (60 seconds)](#-quick-start-60-seconds)
+- [💼 Business Model](#-business-model)
+- [🏗️ Architecture](#️-architecture)
+- [🔄 Workflow & Automation](#-workflow--automation)
+- [🛠️ Technology Stack](#️-technology-stack)
+- [📦 Installation](#-installation)
+- [📖 Documentation](#-documentation)
+- [🌍 Multi-Language Support](#-multi-language-support)
+- [🔌 API Reference](#-api-reference)
+- [🎓 Use Cases](#-use-cases)
+- [🗺️ Roadmap](#️-roadmap)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [📞 Contact](#-contact)
 
-### Instalación Rápida
+---
 
-```bash
-# Clonar repositorio
-git clone https://github.com/marcelodanieldm/dmsentinel.git
-cd dmsentinel
+## ✨ Key Features
 
-# Opción 1: Instalación completa (todas las características v3.0)
-pip install -r requirements.txt
+### 🔍 Advanced Audit Engine
 
-# Opción 2: Instalación mínima (solo core)
-pip install requests packaging dnspython beautifulsoup4 Flask
+```
+✓ 10+ specialized security modules (SSL/TLS, DNS, Headers, Forms, Cookies)
+✓ Intelligent CMS detection (WordPress, Drupal, Joomla, Moodle + versions)
+✓ 200+ CVE vulnerability database with CVSS scoring
+✓ 40+ technical remediation guides with commands
+✓ Weighted severity scoring (2.0x for credential exposure, 1.8x for RCE)
+✓ Attack surface analysis (exposed files, vulnerable plugins, unsafe HTTP methods)
+```
+
+### 🗂️ Centralized Vulnerability Registry
+
+```
+✓ 10+ Web3 & Smart Contract vulnerabilities mapped to industry standards (SWC, CWE, OWASP)
+✓ Technical depth: Opcode analysis, bytecode patterns, real exploit examples
+✓ Real-world hacks: The DAO ($60M), Cream Finance ($130M), Ronin Bridge ($625M)
+✓ Severity classification: Critical, High, Medium, Low
+✓ Categories: Smart Contract, DeFi, Infrastructure, Oracle, Access Control
+✓ Structured data: technical_description, mitigation, cwe_mapping, opcode_patterns
+✓ Utility functions: Search by severity, category, keyword, or vulnerability ID
+✓ Famous exploits: Reentrancy (SWC-107), Oracle Manipulation, Unprotected Self-Destruct
+```
+
+📖 **Reference**: [VULNERABILITY_REGISTRY_DOCS.md](VULNERABILITY_REGISTRY_DOCS.md) | [vulnerability_registry.py](vulnerability_registry.py)
+
+### 🌍 Enterprise Multi-Language System
+
+```
+✓ 5 languages supported: Spanish, English, French, Portuguese, Esperanto
+✓ Complete translation: UI, reports, API responses, PDFs, historical data
+✓ Auto-detection by domain/URL
+✓ Scalable i18n architecture with JSON language files
+```
+
+### 💳 Multi-Gateway Payment System
+
+```
+✓ 3 Pricing Tiers: Check-up ($49), Sentinel ($19/mo), Pro ($99/mo)
+✓ Stripe: Cards + subscriptions with recurring billing
+✓ Mercado Pago + PIX: Instant payments for Brazil/LATAM
+✓ USDC Cryptocurrency: Blockchain payments for Web3
+✓ Automatic monthly audits via invoice.payment_succeeded events
+✓ Non-blocking webhook architecture with threading
+✓ CRM tracking: Google Sheets integration for subscriptions
+✓ Email delivery: Automated PDF reports after payment
+```
+
+### 📊 Google Sheets CRM Integration
+
+```
+✓ Automatic report export with professional formatting
+✓ Interactive dashboards with color-coded severity
+✓ Historical tracking in separate worksheet
+✓ OAuth2 authentication via Service Account
+✓ Conditional formatting based on security scores
+✓ Sales lifecycle management (Initiating → Completed → Error)
+```
+
+### 📄 Professional PDF Generation
+
+```
+✓ Corporate branding with DM Global identity
+✓ Interactive charts: Pie charts for vulnerability distribution
+✓ Structured sections: Executive Summary, Findings, Remediation Plan
+✓ Color-coded by severity and security score
+✓ Auto-pagination with headers/footers
+✓ Complete multi-language support
+```
+
+### 🌐 RESTful API Interface
+
+```
+✓ RESTful endpoints for external integrations
+✓ Make.com ready with webhook support
+✓ API Key authentication (X-API-Key header)
+✓ Endpoints: /scan, /report, /history, /multi-scan, /export
+✓ Swagger/OpenAPI documentation
+```
+
+### 🔄 Multi-Target Concurrent Scanner
+
+```
+✓ Concurrent scanning with ThreadPoolExecutor
+✓ Configurable workers (1-10 simultaneous threads)
+✓ Intelligent result aggregation
+✓ Consolidated reports: Average scores, high-risk targets, global stats
+✓ Real-time progress tracking
+✓ Robust per-target error handling
+```
+
+### 📈 Historical Tracking & Trending
+
+```
+✓ SQLite database for persistence
+✓ Trend analysis: Compare scans over time
+✓ Trend visualization: Improving / Stable / Degrading
+✓ Automatic alerts on score degradation
+✓ Delta reports: New vs resolved vulnerabilities
+✓ Statistics: Average score, volatility, overall trend
+```
+
+### 📧 Automated Email Delivery
+
+```
+✓ SMTP/TLS integration (Gmail App Password support)
+✓ HTML email templates with 5-language support
+✓ PDF attachments: Automated delivery after audit
+✓ Non-blocking architecture (email failures don't stop workflow)
+✓ Color-coded reports with score badges
+```
+
+### 💡 Market Intelligence
+
+```
+✓ TVL (Total Value Locked) monitoring via web3 APIs
+✓ Real-time protocol liquidity tracking
+✓ Financial impact calculation (severity × TVL)
+✓ Risk categorization ($10M+ = Critical, $1-10M = High, etc.)
+✓ Multi-chain support (Ethereum, Polygon, BSC, Avalanche)
+```
+
+### 📊 Power BI Export & Dashboards
+
+```
+✓ Export audit data to Power BI-compatible JSON/Excel
+✓ Pre-built dashboard templates
+✓ Real-time data refresh via APIs
+✓ Custom KPI visualizations (score trends, severity distribution)
+✓ Executive reporting with drill-down capabilities
 ```
 
 ---
 
-## 🚀 Guía de Uso
+## 🎯 Quick Start (60 seconds)
 
-### 1. Escaneo Básico
+### Option 1: CLI Scan
+
+```bash
+# Clone and install
+git clone https://github.com/marcelodanieldm/dmsentinel.git
+cd dmsentinel
+pip install -r requirements.txt
+
+# Run first scan
+python -c "from sentinel_core import DMSentinelCore; \
+           sentinel = DMSentinelCore(language='en'); \
+           report = sentinel.run_full_audit('https://example.com'); \
+           print(f'Score: {report[\"summary\"][\"security_score\"]}/100')"
+```
+
+### Option 2: REST API
+
+```bash
+# Start API server
+python sentinel_api.py
+
+# Run scan via API (new terminal)
+curl -X POST http://localhost:5000/api/v3/scan \
+  -H "X-API-Key: demo_key" \
+  -H "Content-Type: application/json" \
+  -d '{"target": "https://example.com", "language": "en"}'
+```
+
+### Option 3: Webhook Automation
+
+```bash
+# Configure payment gateway webhook
+export STRIPE_API_KEY="sk_test_..."
+export STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# Start automation engine
+python sentinelautomationengine.py
+
+# Payment received → Audit triggered automatically ✅
+```
+
+**Output**: Security report with score, vulnerabilities, and remediation plan in < 2 minutes.
+
+---
+
+## 💼 Business Model
+
+### 🎯 Target Market
+
+| Segment | TAM | ICP | Pain Point |
+|---------|-----|-----|------------|
+| **CMS/LMS Platforms** | $8B+ | Schools, universities, corporate training | Manual audits cost $10K-50K, take weeks |
+| **Web3 DeFi** | $50B+ TVL | DeFi protocols, DAOs, NFT projects | Smart contract hacks ($2.3B+ lost in 2023) |
+| **E-commerce** | $5T+ | Shopify, WooCommerce, Magento sites | PCI-DSS compliance required for card processing |
+| **SaaS Platforms** | $200B+ | B2B SaaS with sensitive customer data | SOC 2 audits required for enterprise clients |
+
+### 💰 Pricing Strategy
+
+<div align="center">
+
+| Plan | Price | Target Customer | Key Features | Margin |
+|------|-------|----------------|--------------|--------|
+| **Check-up** | $49 (one-time) | SMBs, startups | Full audit, PDF report, no monitoring | 85% |
+| **Sentinel** | $19/month | Growing businesses | Monthly audits, Telegram alerts, email support | 90% |
+| **Sentinel Pro** | $99/month | Enterprises | 24/7 monitoring, priority support, Power BI, API | 92% |
+
+</div>
+
+**Why this works**:
+- ✅ **Low barrier**: $49 check-up vs $10K+ traditional audit (98% cost reduction)
+- ✅ **Recurring revenue**: Subscriptions provide predictable MRR
+- ✅ **High margins**: 85-92% gross margin (minimal COGS after development)
+- ✅ **Scalability**: Automated audits = unlimited customers with same infrastructure
+
+### 📊 Unit Economics (Pro Plan Example)
+
+```
+Customer Acquisition Cost (CAC): $150 (Google Ads, landing page)
+Monthly Revenue per User (ARPU): $99
+Gross Margin: 92%
+Churn Rate: 5%/month
+Customer Lifetime (1/churn): 20 months
+Customer Lifetime Value (LTV): $99 × 20 × 0.92 = $1,821
+
+LTV/CAC Ratio: 12.1x ✅ (target: > 3x)
+Payback Period: 1.5 months ✅ (target: < 12 months)
+```
+
+### 🚀 Growth Strategy
+
+**Phase 1: PMF (Product-Market Fit)** - 0-100 customers
+- Target niche: DeFi protocols under $50M TVL
+- Channel: Direct outreach to protocol founders on Twitter/Discord
+- Goal: Validate $19-99/mo pricing, refine audit accuracy
+
+**Phase 2: Scale** - 100-1,000 customers
+- Target: Web3 + WordPress/Drupal/Moodle sites
+- Channels: Content marketing (SEO), paid ads, partnerships
+- Goal: $50K MRR, automated onboarding
+
+**Phase 3: Enterprise** - 1,000+ customers
+- Target: Fortune 500, government agencies
+- Product: Custom audit rules, SOC 2/ISO 27001 compliance
+- Goal: $1M+ ARR, enterprise SLAs
+
+### 🔄 Revenue Streams
+
+| Stream | Revenue Type | % of Total | Status |
+|--------|-------------|-----------|---------|
+| Subscription Plans | Recurring | 70% | ✅ Live |
+| One-Time Audits | Transactional | 20% | ✅ Live |
+| API Usage/Credits | Usage-based | 5% | 🔨 Beta |
+| White-Label License | Enterprise | 5% | 🗓️ Planned |
+
+**Total Addressable Revenue**: Targeting $1M ARR by end of 2026.
+
+---
+
+## 🏗️ Architecture
+
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CLIENT LAYER                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Landing Page │  │  REST API    │  │   Webhooks   │      │
+│  │  (React.js)  │  │  (Flask)     │  │   (Stripe)   │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+└─────────┼──────────────────┼──────────────────┼─────────────┘
+          │                  │                  │
+          ▼                  ▼                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│               APPLICATION LAYER (Python 3.9+)                │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Audit Engine │  │  Automation  │  │  Payment     │      │
+│  │ (sentinel_   │  │   Engine     │  │  Gateway     │      │
+│  │  core.py)    │  │ (webhooks)   │  │  Handler     │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+│         │                  │                  │              │
+│  ┌──────┴─────────────────┴──────────────────┴────────┐    │
+│  │         Business Logic & Orchestration              │    │
+│  │  • Multi-language i18n  • PDF generation           │    │
+│  │  • Historical tracking  • Email delivery           │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   DATA & INTEGRATION LAYER                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   SQLite     │  │ Google       │  │  External    │      │
+│  │  (history)   │  │ Sheets CRM   │  │  APIs        │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│         │                  │                  │              │
+│  Telegram Bot API    SMTP (Gmail)    Web3 RPCs/DeFiLlama   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Core Components
+
+#### 1. Audit Engine (`sentinel_core.py`)
+
+Modular vulnerability scanner with pluggable analyzers:
+
+```python
+class DMSentinelCore:
+    def __init__(self, language='en'):
+        self.language = language
+        self.analyzers = [
+            SSLAnalyzer(),
+            DNSAnalyzer(),
+            HeadersAnalyzer(),
+            CookieAnalyzer(),
+            FormAnalyzer(),
+            CMSDetector(),
+            PluginScanner(),
+            ConfigScanner(),
+            PortScanner(),
+            SecretScanner()
+        ]
+    
+    def run_full_audit(self, target_url):
+        results = []
+        for analyzer in self.analyzers:
+            findings = analyzer.analyze(target_url)
+            results.extend(findings)
+        
+        return self._generate_report(results)
+```
+
+#### 2. Automation Engine (`sentinelautomationengine.py`)
+
+Non-blocking webhook processor with threading:
+
+```python
+@app.route('/webhooks/stripe', methods=['POST'])
+def stripe_webhook():
+    # Verify signature (< 50ms)
+    event = stripe.Webhook.construct_event(
+        payload=request.data,
+        sig_header=request.headers.get('Stripe-Signature'),
+        secret=WEBHOOK_SECRET
+    )
+    
+    # Extract metadata
+    metadata = event['data']['object']['metadata']
+    
+    # Launch async audit (< 100ms total response time)
+    threading.Thread(
+        target=execute_audit_async,
+        args=(metadata['target_url'], metadata['client_email'],
+              metadata['plan_id'], metadata['lang']),
+        daemon=True
+    ).start()
+    
+    return jsonify({'status': 'received'}), 200
+```
+
+#### 3. CRM Integration (`sheets_manager.py`)
+
+Google Sheets as operational database:
+
+```python
+class SheetsManager:
+    def log_sale(self, session_id, email, plan_id, amount):
+        """Log payment to CRM_LEADS sheet"""
+        row = [datetime.now(), email, plan_id, amount, 
+               session_id, 'Initiating', ...]
+        self.worksheet('CRM_LEADS').append_row(row)
+    
+    def log_audit(self, session_id, report):
+        """Log technical results to AUDIT_LOGS sheet"""
+        row = [session_id, report['score'], report['grade'],
+               len(report['critical']), len(report['high']), ...]
+        self.worksheet('AUDIT_LOGS').append_row(row)
+```
+
+### Data Flow
+
+**Complete Audit Lifecycle**:
+
+```
+1. Payment Event (Stripe/Pix/USDC)
+   ↓
+2. Webhook received (< 100ms response)
+   ↓
+3. Async thread spawned
+   ↓
+4. [Thread] Log to CRM: Status='Initiating'
+   ↓
+5. [Thread] Run security scan (10-30 seconds)
+   ↓
+6. [Thread] Generate PDF report
+   ↓
+7. [Thread] Send email with PDF
+   ↓
+8. [Thread] Log to CRM: Status='Completed'
+   ↓
+9. [Thread] If score < threshold → Telegram alert
+   ↓
+10. [Thread] Update historical database
+```
+
+---
+
+## 🔄 Workflow & Automation
+
+### Payment-Triggered Audit Flow
+
+```
+┌────────┐       ┌────────┐       ┌────────┐       ┌────────┐
+│ Client │───────│ Stripe │───────│Webhook │───────│ Audit  │
+│  Pays  │       │Checkout│       │Handler │       │ Engine │
+└────────┘       └────────┘       └────────┘       └────────┘
+     │                │                │                │
+     │ Pay $49-99     │                │                │
+     │───────────────>│                │                │
+     │                │ webhook event  │                │
+     │                │───────────────>│                │
+     │                │                │ Verify HMAC    │
+     │                │                │─────────┐      │
+     │                │                │         │      │
+     │                │                │<────────┘      │
+     │                │                │ Spawn async    │
+     │                │                │───────────────>│
+     │                │ 200 OK (<100ms)│                │
+     │                │<───────────────│                │
+     │                │                │                │ Run scan
+     │                │                │                │──────┐
+     │                │                │                │      │
+     │                │                │                │<─────┘
+     │                │                │                │ Gen PDF
+     │                │                │                │──────┐
+     │<───────────────────────email with PDF───────────│<─────┘
+```
+
+### Subscription Auto-Renewal Flow
+
+**Monthly Recurring Audits**:
+
+```
+Day 0: Customer subscribes ($19/mo)
+   ↓
+Day 0: First audit triggered (checkout.session.completed)
+   ↓
+Day 30: Stripe auto-charge (invoice.payment_succeeded)
+   ↓
+Day 30: Second audit triggered automatically
+   ↓
+Day 60: Third audit...
+   ↓
+[Repeat monthly until cancellation]
+```
+
+**Implementation**:
+
+```python
+# Handle recurring payments
+if event['type'] == 'invoice.payment_succeeded':
+    billing_reason = event['data']['object']['billing_reason']
+    
+    if billing_reason == 'subscription_cycle':
+        # Monthly audit for existing subscription
+        subscription_id = event['data']['object']['subscription']
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        target_url = subscription['metadata']['target_url']
+        
+        # Trigger new audit
+        execute_audit_async(target_url, ...)
+```
+
+### Multi-Gateway Support
+
+| Gateway | Method | Region | Settlement Time | Fee |
+|---------|--------|--------|----------------|-----|
+| **Stripe** | Cards | Global | 2-7 days | 2.9% + $0.30 |
+| **Mercado Pago** | PIX | Brazil | Instant | 3.99% |
+| **Coinbase** | USDC | Global | 3-10 mins | 1% |
+
+**Webhook Endpoints**:
+- `/webhooks/stripe` - Stripe checkout + subscriptions
+- `/webhooks/mercadopago` - PIX / credit card (LATAM)
+- `/webhooks/crypto` - Coinbase Commerce (USDC)
+
+---
+
+## 🛠️ Technology Stack
+
+### Backend
+
+<div align="center">
+
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| **Language** | Python | 3.9+ | Core runtime |
+| **Web Framework** | Flask | 3.0+ | REST API, webhooks |
+| **Security Analysis** | dnspython | 2.4+ | DNS/email verification |
+| **HTML Parsing** | BeautifulSoup4 | 4.12+ | Page analysis, form detection |
+| **PDF Generation** | FPDF2 | 2.7+ | Professional PDF reports |
+| **Google Sheets** | gspread | 5.11+ | CRM integration |
+| **Authentication** | google-auth | 2.20+ | OAuth2 Service Account |
+| **Database** | SQLite | 3.x | Historical tracking (stdlib) |
+| **Concurrency** | ThreadPoolExecutor | - | Multi-target scans (stdlib) |
+| **Payment Gateway** | stripe-python | 7.0+ | Stripe integration |
+| **Email** | smtplib | - | Email delivery (stdlib) |
+| **Web3** | web3.py | 6.x | Blockchain interactions |
+| **HTTP Client** | requests | 2.31+ | External API calls |
+
+</div>
+
+### Frontend (Landing Page)
+
+<div align="center">
+
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| **Framework** | React | 18.2 | UI framework |
+| **Build Tool** | Vite | 5.0+ | Dev server + bundler |
+| **Styling** | CSS3 | - | Cyber-neon design |
+| **Web3 Wallet** | ethers.js | 6.x | MetaMask integration |
+| **Payment UI** | Stripe.js | - | Checkout integration |
+
+</div>
+
+### Infrastructure & DevOps
+
+<div align="center">
+
+| Category | Technology | Purpose |
+|----------|-----------|---------|
+| **Hosting** | Vercel / AWS | Landing page + API |
+| **Database** | SQLite → PostgreSQL | Historical data (planned migration) |
+| **Notifications** | Telegram Bot API | Admin alerts |
+| **Monitoring** | Sentry | Error tracking (planned) |
+| **CI/CD** | GitHub Actions | Automated testing (planned) |
+
+</div>
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+
+- Python 3.9 or higher
+- pip (Python package manager)
+- Git
+- Google Cloud account (for Sheets integration - optional)
+- Stripe account (for payment automation - optional)
+
+### Quick Installation
+
+```bash
+# 1. Clone repository
+git clone https://github.com/marcelodanieldm/dmsentinel.git
+cd dmsentinel
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Configure environment variables (optional)
+cp .env.example .env
+nano .env  # Edit with your API keys
+
+# 4. Run first scan
+python -c "from sentinel_core import DMSentinelCore; \
+           sentinel = DMSentinelCore(); \
+           report = sentinel.run_full_audit('https://example.com'); \
+           print(report['summary'])"
+```
+
+### Docker Installation (Coming Soon)
+
+```bash
+docker pull dmsentinel/dmsentinel:latest
+docker run -p 5000:5000 -e STRIPE_API_KEY=sk_test_... dmsentinel/dmsentinel
+```
+
+### Configuration
+
+Create `.env` file with your credentials:
+
+```bash
+# Stripe Payment Gateway
+STRIPE_API_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Mercado Pago (Brazil/LATAM)
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
+
+# Coinbase Commerce (Crypto)
+COINBASE_COMMERCE_API_KEY=...
+
+# Google Sheets CRM
+GOOGLE_SPREADSHEET_ID=1Abc2Def3...
+GOOGLE_CREDENTIALS_PATH=credentials.json
+
+# Email Delivery (Gmail)
+SMTP_USER=security@dmglobal.com
+SMTP_PASSWORD=your-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+
+# Telegram Alerts
+TELEGRAM_BOT_TOKEN=123456789:ABC...
+TELEGRAM_CHAT_ID=123456789
+
+# Web3 (DeFi protocols)
+WEB3_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/...
+DEFILLAMA_API_KEY=... (optional)
+```
+
+### Verify Installation
+
+```bash
+# Test core audit engine
+python -m pytest tests/test_core.py
+
+# Test API endpoints
+python test_webhooks.py
+
+# Test Google Sheets integration
+python sheets_manager.py
+```
+
+---
+
+## 📖 Documentation
+
+### Complete Guides
+
+- **[GOOGLE_SHEETS_GUIDE.md](GOOGLE_SHEETS_GUIDE.md)** - CRM integration setup
+- **[WEBHOOK_GUIDE.md](WEBHOOK_GUIDE.md)** - Payment automation configuration
+- **[SETUP_POWERBI.md](SETUP_POWERBI.md)** - Power BI dashboard setup
+- **[SETUP_MARKET_INTEL.md](SETUP_MARKET_INTEL.md)** - Web3 market intelligence
+- **[TRANSLATION_AUDIT.md](TRANSLATION_AUDIT.md)** - Multi-language system docs
+
+### Quick Reference
+
+#### Run Basic Scan
 
 ```python
 from sentinel_core import DMSentinelCore
 
-# Inicializar scanner
-sentinel = DMSentinelCore(language='es')
-
-# Ejecutar auditoría completa
+sentinel = DMSentinelCore(language='en')
 report = sentinel.run_full_audit('https://example.com')
 
-# Mostrar score
-print(f"Security Score: {report['summary']['security_score']}/100")
-print(f"Grade: {report['summary']['grade']}")
+print(f"Score: {report['summary']['security_score']}/100")
+print(f"Critical: {len(report['findings']['critical'])}")
+print(f"High: {len(report['findings']['high'])}")
 ```
 
-### 2. Generación de PDF
+#### Export to PDF
 
 ```python
-from sentinel_pdf import generate_pdf
+from report_generator import generate_pdf_report
 
-# Generar reporte PDF en español
-generate_pdf(report, 'reporte_seguridad.pdf', language='es')
-```
-
-### 3. Export a Google Sheets
-
-```python
-from sentinel_sheets import export_to_sheets
-
-# Exportar a Google Sheets (requiere credentials.json)
-export_to_sheets(
-    report, 
-    spreadsheet_id='your-spreadsheet-id',
-    language='es'
+generate_pdf_report(
+    audit_report=report,
+    output_path='reports/security_audit.pdf',
+    language='en'
 )
 ```
 
-### 4. Escaneo Multi-Target
+#### Export to Google Sheets
+
+```python
+from sheets_manager import SheetsManager
+
+sheets = SheetsManager()
+sheets.log_sale(session_id='test_001', client_email='client@example.com',
+                plan_id='pro', amount=99, status='Completed')
+sheets.log_audit(session_id='test_001', target_url='https://example.com',
+                 audit_report=report, duration=23.5)
+```
+
+#### Multi-Target Scan
 
 ```python
 from sentinel_multi import scan_multiple_targets
 from sentinel_core import DMSentinelCore
 
 sentinel = DMSentinelCore()
+targets = ['https://site1.com', 'https://site2.com', 'https://site3.com']
 
-targets = [
-    'https://site1.com',
-    'https://site2.com',
-    'https://site3.com'
-]
-
-# Escanear 3 targets concurrentemente con 2 workers
 results = scan_multiple_targets(
     targets,
     sentinel.run_full_audit,
-    max_workers=2,
-    language='es'
+    max_workers=3,
+    language='en'
 )
 
-print(f"Score promedio: {results['summary']['average_score']}")
+print(f"Average Score: {results['summary']['average_score']}")
+print(f"High Risk Sites: {results['summary']['high_risk_targets']}")
 ```
 
-### 5. API REST
+---
+
+## 🌍 Multi-Language Support
+
+DM Sentinel supports **5 languages** with complete translation coverage:
+
+<div align="center">
+
+| Language | Code | UI | Reports | PDFs | Emails | Status |
+|----------|------|-------|---------|------|--------|--------|
+| 🇪🇸 Spanish | `es` | ✅ | ✅ | ✅ | ✅ | Primary |
+| 🇬🇧 English | `en` | ✅ | ✅ | ✅ | ✅ | Complete |
+| 🇫🇷 French | `fr` | ✅ | ✅ | ✅ | ✅ | Complete |
+| 🇧🇷 Portuguese | `pt` | ✅ | ✅ | ✅ | ✅ | Complete |
+| 🌐 Esperanto | `eo` | ✅ | ✅ | ✅ | ✅ | Complete |
+
+</div>
+
+### Auto-Detection
+
+Language is automatically detected based on:
+1. `lang` parameter in API request
+2. Browser language (landing page)
+3. Target URL domain extension (.es, .fr, .br)
+4. Default fallback: English
+
+### Usage Examples
 
 ```python
-from sentinel_api import create_app
+# Spanish report
+sentinel_es = DMSentinelCore(language='es')
+report_es = sentinel_es.run_full_audit('https://example.com')
+
+# French PDF
+generate_pdf_report(report, 'rapport_securite.pdf', language='fr')
+
+# Portuguese email
+send_email_report(client_email, report, language='pt')
+```
+
+---
+
+## 🔌 API Reference
+
+### Base URL
+
+```
+Production: https://api.dmsentinel.com
+Development: http://localhost:5000
+```
+
+### Authentication
+
+All API requests require authentication via API Key:
+
+```bash
+curl -H "X-API-Key: your_api_key_here" https://api.dmsentinel.com/api/v3/...
+```
+
+### Endpoints
+
+#### POST /api/v3/scan
+
+Start a new security scan.
+
+**Request**:
+
+```json
+{
+  "target": "https://example.com",
+  "language": "en",
+  "plan": "corporate"
+}
+```
+
+**Response**:
+
+```json
+{
+  "scan_id": "scan_abc123",
+  "status": "running",
+  "estimated_time": 30
+}
+```
+
+#### GET /api/v3/scan/{scan_id}
+
+Check scan status.
+
+**Response**:
+
+```json
+{
+  "scan_id": "scan_abc123",
+  "status": "completed",
+  "progress": 100,
+  "duration": 28.5
+}
+```
+
+#### GET /api/v3/report/{scan_id}
+
+Retrieve full audit report.
+
+**Response**:
+
+```json
+{
+  "scan_id": "scan_abc123",
+  "target": "https://example.com",
+  "summary": {
+    "security_score": 72,
+    "grade": "B",
+    "risk_level": "MEDIUM"
+  },
+  "findings": {
+    "critical": [],
+    "high": [
+      {
+        "id": "WP_OUTDATED",
+        "title": "Outdated WordPress Version",
+        "severity": "HIGH",
+        "cvss": 7.5,
+        "description": "WordPress 5.8 detected (current 6.4)",
+        "remediation": "Update to latest version"
+      }
+    ],
+    "medium": [...],
+    "low": [...]
+  }
+}
+```
+
+#### POST /api/v3/multi-scan
+
+Scan multiple targets concurrently.
+
+**Request**:
+
+```json
+{
+  "targets": [
+    "https://site1.com",
+    "https://site2.com",
+    "https://site3.com"
+  ],
+  "language": "en",
+  "max_workers": 3
+}
+```
+
+**Response**:
+
+## Summary
+
+```json
+{
+  "batch_id": "batch_xyz789",
+  "total_targets": 3,
+  "summary": {
+    "average_score": 68.3,
+    "high_risk_targets": 1
+  },
+  "results": [...]
+}
+```
+
+#### GET /api/v3/history/{target}
+
+Get historical scans for a target.
+
+**Response**:
+
+```json
+{
+  "target": "https://example.com",
+  "total_scans": 12,
+  "trend": "IMPROVING",
+  "history": [
+    {
+      "scan_id": "scan_001",
+      "date": "2026-03-01",
+      "score": 65
+    },
+    {
+      "scan_id": "scan_002",
+      "date": "2026-03-11",
+      "score": 72
+    }
+  ]
+}
+```
+
+#### GET /api/v3/export/{scan_id}/{format}
+
+Export report in different formats.
+
+**Formats**: `json`, `pdf`, `xlsx`, `powerbi`
+
+**Example**:
+
+```bash
+curl -H "X-API-Key: demo_key" \
+  https://api.dmsentinel.com/api/v3/export/scan_abc123/pdf \
+  -o report.pdf
+```
+
+### Rate Limits
+
+<div align="center">
+
+| Plan | Requests/Hour | Concurrent Scans |
+|------|---------------|------------------|
+| Free | 10 | 1 |
+| Check-up | 20 | 1 |
+| Sentinel | 100 | 3 |
+| Pro | 1000 | 10 |
+
+</div>
+
+---
+
+## 🎓 Use Cases
+
+### 1. Educational Institutions (Moodle Security)
+
+**Problem**: University with 10,000+ students on outdated Moodle 3.8.
+
+**Solution**:
+
+```python
 from sentinel_core import DMSentinelCore
 
-# Crear aplicación Flask con API
-sentinel = DMSentinelCore()
-app = create_app(sentinel)
+sentinel = DMSentinelCore(language='en')
+report = sentinel.run_full_audit('https://university.edu/moodle')
 
-# Iniciar servidor
-app.run(host='0.0.0.0', port=5000)
+# Output: 15 vulnerabilities (3 critical)
+# - Outdated Moodle 3.8 → RCE vulnerability (CVE-2020-14321)
+# - Missing HSTS header → Man-in-the-middle risk
+# - Weak cookie flags → Session hijacking possible
+
+# Remediation plan generated with step-by-step commands
 ```
 
-**Uso de la API**:
+**Result**: University upgrades to Moodle 4.x, reduces attack surface by 80%.
 
-```bash
-# Obtener API key
-curl http://localhost:5000/api
+### 2. DeFi Protocol (Web3 Audit)
 
-# Iniciar scan
-curl -X POST http://localhost:5000/api/v3/scan \
-  -H "X-API-Key: demo_key" \
-  -H "Content-Type: application/json" \
-  -d '{"target": "https://example.com"}' \
-  --data-urlencode lang=es
+**Problem**: New DeFi protocol with $50M TVL, no security audit yet.
 
-# Verificar estado
-curl http://localhost:5000/api/v3/scan/{scan_id} \
-  -H "X-API-Key: demo_key"
-
-# Obtener reporte
-curl http://localhost:5000/api/v3/report/{scan_id} \
-  -H "X-API-Key: demo_key"
-```
-
-### 6. Historical Tracking
+**Solution**:
 
 ```python
+from sentinel_market_intel import SentinelMarketIntel
+
+engine = SentinelMarketIntel()
+
+# Get TVL
+tvl = engine.get_tvl_from_defillama('uniswap-v3', 'ethereum')
+
+# Calculate financial risk
+impact = engine.calculate_financial_impact(
+    severity_score=85,  # High severity
+    tvl_usd=50_000_000
+)
+
+print(f"Financial Impact: ${impact.financial_impact_usd:,.0f}")
+# Output: $42,500,000 at risk
+
+# Risk category: CRITICAL (> $10M)
+```
+
+**Result**: Protocol fixes vulnerabilities before deploying to mainnet, saves potential $40M+ exploit.
+
+### 3. E-commerce (PCI-DSS Compliance)
+
+**Problem**: Shopify store processing $100K/month, needs PCI compliance.
+
+**Solution**:
+
+```python
+# Monthly subscription scans
+sentinel = DMSentinelCore(language='en')
+
+# Automated via Stripe subscription
+# Every month:
+# 1. Scan runs automatically (invoice.payment_succeeded webhook)
+# 2. PDF report emailed to owner
+# 3. Telegram alert if score < 70
+
+# Historical tracking shows improvement over time
 from sentinel_history import HistoricalTracker
 
-tracker = HistoricalTracker(language='es')
+tracker = HistoricalTracker()
+trends = tracker.get_vulnerability_trends('https://shop.example.com', days=90)
 
-# Guardar scan en historial
-scan_id = tracker.save_scan(report)
-
-# Obtener historial
-history = tracker.get_scan_history('https://example.com', limit=10)
-
-# Comparar scans (primero vs último)
-comparison = tracker.compare_scans('https://example.com')
-print(f"Score cambió: {comparison['changes']['score_change']} puntos")
-print(f"Tendencia: {comparison['trend']['description']}")
-
-# Análisis de tendencias (últimos 30 días)
-trends = tracker.get_vulnerability_trends('https://example.com', days=30)
-print(f"Score promedio: {trends['statistics']['average_score']}")
+print(f"Score improved from {trends['first_score']} to {trends['last_score']}")
+# Output: Score improved from 62 to 88 (PCI-DSS ready)
 ```
+
+**Result**: Store achieves PCI-DSS compliance, no more manual audits ($5K/year savings).
 
 ---
 
-## 🔑 Configuración de Google Sheets
+## 🗺️ Roadmap
 
-1. **Crear Service Account**:
-   - Ir a [Google Cloud Console](https://console.cloud.google.com/)
-   - Crear nuevo proyecto
-   - Habilitar Google Sheets API y Google Drive API
-   - Crear Service Account y descargar `credentials.json`
+### Q2 2026
 
-2. **Compartir Spreadsheet**:
-   - Abrir `credentials.json`
-   - Copiar el email del service account (`...@...iam.gserviceaccount.com`)
-   - Compartir tu Google Sheet con ese email (permisos de editor)
+- [x] ✅ **v3.0 Launch** - Multi-gateway payments + CRM integration
+- [x] ✅ **Power BI Export** - Executive dashboards
+- [x] ✅ **Market Intelligence** - TVL monitoring for Web3
+- [ ] 🔨 **Docker Image** - Containerized deployment
+- [ ] 🔨 **PostgreSQL Migration** - From SQLite for scale
+- [ ] 🔨 **Sentry Integration** - Error monitoring
 
-3. **Configurar DM Sentinel**:
-   ```python
-   from sentinel_sheets import GoogleSheetsExporter
-   
-   exporter = GoogleSheetsExporter(
-       credentials_path='credentials.json',
-       language='es'
-   )
-   
-   # Crear dashboard
-   url = exporter.create_dashboard('DM Sentinel - Security Reports')
-   ```
+### Q3 2026
+
+- [ ] 🗓️ **Smart Contract Audits** - Solidity/Vyper static analysis
+- [ ] 🗓️ **GitHub Actions** - CI/CD integration
+- [ ] 🗓️ **Slack/Discord Bots** - Team notifications
+- [ ] 🗓️ **White-Label Solution** - Rebrand for agencies
+- [ ] 🗓️ **Mobile App** - iOS/Android audit viewer
+
+### Q4 2026
+
+- [ ] 🗓️ **AI-Powered Remediation** - GPT-4 suggests fixes
+- [ ] 🗓️ **SOC 2 Compliance Module** - Enterprise audits
+- [ ] 🗓️ **Penetration Testing** - Active exploit attempts
+- [ ] 🗓️ **Bug Bounty Platform** - Community-driven security
+- [ ] 🗓️ **Partner Marketplace** - Vetted security firms
+
+### Future (2027+)
+
+- [ ] 💡 **Blockchain-Native Audits** - On-chain vulnerability reports
+- [ ] 💡 **DAO Governance** - Community-driven audit rules
+- [ ] 💡 **Insurance Integration** - Audit-backed coverage
+- [ ] 💡 **Real-Time Monitoring** - 24/7 honeypot detection
 
 ---
 
-## 🔗 Automation Engine v3.0
+## 🤝 Contributing
 
-Sistema de webhooks empresarial con arquitectura no bloqueante y seguridad avanzada.
+We welcome contributions! Here's how you can help:
 
-### 🎯 Características Principales
+### Ways to Contribute
 
-#### ✅ Arquitectura No Bloqueante
-- **Threading asíncrono**: Respuesta a webhooks en < 100ms
-- **Ejecución en background**: Auditorías no bloquean el servidor
-- **Alta concurrencia**: Múltiples auditorías simultáneas
-- **Sin timeouts**: Previene reintentos innecesarios de Stripe
+1. **Report Bugs**: Open an issue with detailed reproduction steps
+2. **Suggest Features**: Describe your use case and desired outcome
+3. **Submit PRs**: Fix bugs or add new analyzers
+4. **Improve Docs**: Translate to new languages, add examples
+5. **Security Research**: Report vulnerabilities via security@dmglobal.com
 
-#### ✅ Validación de Identidad
-- **Firma criptográfica**: `stripe.Webhook.construct_event`
-- **Verificación HMAC SHA-256**: 100% seguro contra suplantación
-- **Protección contra replay attacks**: Timestamps verificados
-
-#### ✅ Lógica de Negocio por Plan
-
-| Plan | Análisis DNS | Análisis Forms | Análisis Cookies | Umbral Alerta | Profundidad |
-|------|--------------|----------------|------------------|---------------|-------------|
-| **Lite** | ❌ | ❌ | ❌ | < 60 | Básico |
-| **Corporate** | ✅ | ✅ | ✅ | < 70 | Completo |
-
-#### ✅ UX de Administración Mejorada
-- **MarkdownV2**: Formato visual profesional en Telegram
-- **Botones interactivos**: Ver reporte, contactar cliente, abrir sitio
-- **Iconos de estado**: 🔴 Crítico, 🟠 Alto Riesgo, 🟡 Advertencia
-- **Top 3 vulnerabilidades**: Resumen ejecutivo instantáneo
-
-#### ✅ Trazabilidad Forense
-- **Session ID tracking**: De Stripe a logs y reportes
-- **Logs estructurados**: Búsqueda rápida por sesión
-- **Cruceo contable**: Liga pagos con hallazgos técnicos
-- **Archivos nominados**: `report_{session_id}.json`
-
-### 🚀 Configuración Rápida
+### Development Setup
 
 ```bash
-# 1. Instalar dependencias
-pip install stripe>=7.0.0
+# 1. Fork repository on GitHub
 
-# 2. Configurar variables de entorno
-export STRIPE_API_KEY="sk_live_..."
-export STRIPE_WEBHOOK_SECRET="whsec_..."
-export TELEGRAM_BOT_TOKEN="123456789:ABC..."
-export TELEGRAM_CHAT_ID="123456789"
+# 2. Clone your fork
+git clone https://github.com/YOUR_USERNAME/dmsentinel.git
+cd dmsentinel
 
-# 3. Iniciar servidor
-python sentinelautomationengine.py
+# 3. Create feature branch
+git checkout -b feature/my-new-analyzer
+
+# 4. Install dev dependencies
+pip install -r requirements-dev.txt
+
+# 5. Make changes and test
+pytest tests/
+
+# 6. Commit with conventional commits
+git commit -m "feat: add XSS analyzer module"
+
+# 7. Push and create PR
+git push origin feature/my-new-analyzer
 ```
 
-### 📡 Endpoints Disponibles
+### Coding Standards
 
-```
-POST /webhooks/stripe           # Webhook producción (firma verificada)
-POST /webhooks/stripe/test      # Webhook desarrollo (sin verificación)
-GET  /health                    # Health check
-GET  /                          # API info
-```
+- **Python**: PEP 8 style guide
+- **Docstrings**: Google-style docstrings
+- **Type Hints**: Use wherever possible
+- **Tests**: 80%+ code coverage required
 
-### 🧪 Testing Local
+### Adding a New Analyzer
 
-**Opción 1: Endpoint de prueba**
-```bash
-curl -X POST http://localhost:5000/webhooks/stripe/test \
-  -H "Content-Type: application/json" \
-  -d '{
-    "target_url": "https://example.com",
-    "client_email": "cliente@empresa.com",
-    "plan_id": "corporate",
-    "lang": "es"
-  }'
-```
-
-**Opción 2: Stripe CLI**
-```bash
-stripe listen --forward-to http://localhost:5000/webhooks/stripe
-stripe trigger checkout.session.completed
-```
-
-**Opción 3: Script de prueba**
-```bash
-python test_webhooks.py
-```
-
-### 🔧 Configuración de Metadata en Payment Gateways
-
-#### Stripe (Cards + Subscriptions)
-
-**One-Time Payment:**
 ```python
-import stripe
+# Example: Add SQL Injection analyzer
 
-session = stripe.checkout.Session.create(
-    payment_method_types=['card'],
-    line_items=[{'price': 'price_checkup_49usd', 'quantity': 1}],
-    mode='payment',  # One-time payment
-    success_url='https://dmsentinel.com/success?session_id={CHECKOUT_SESSION_ID}',
-    cancel_url='https://dmsentinel.com/cancel',
+class SQLInjectionAnalyzer:
+    """Detect SQL injection vulnerabilities in forms."""
     
-    # ⭐ Metadata requerida para DM Sentinel
-    metadata={
-        'target_url': 'https://cliente-sitio.com',  # REQUERIDO
-        'plan_id': 'checkup',                       # checkup, sentinel, pro
-        'lang': 'es',                               # es, en, fr, pt, eo
-    }
-)
-```
-
-**Subscription (Recurring):**
-```python
-session = stripe.checkout.Session.create(
-    payment_method_types=['card'],
-    line_items=[{'price': 'price_sentinel_19usd_monthly', 'quantity': 1}],
-    mode='subscription',  # Recurring subscription
-    success_url='https://dmsentinel.com/success?session_id={CHECKOUT_SESSION_ID}',
-    cancel_url='https://dmsentinel.com/cancel',
-    
-    metadata={
-        'target_url': 'https://cliente-sitio.com',
-        'plan_id': 'sentinel',  # sentinel or pro
-        'lang': 'es',
-    }
-)
-```
-
-**Stripe Subscription Events:**
-- `customer.subscription.created` → Triggers first audit
-- `invoice.payment_succeeded` (billing_reason='subscription_cycle') → Triggers monthly audit
-- `customer.subscription.deleted` → Updates CRM status to 'CANCELADA'
-- `customer.subscription.updated` → Updates CRM with new status
-
-#### Mercado Pago (PIX + LATAM)
-
-**Create Preference:**
-```python
-import mercadopago
-
-sdk = mercadopago.SDK("YOUR_ACCESS_TOKEN")
-
-preference_data = {
-    "items": [
-        {
-            "title": "DM Sentinel - Check-up Único",
-            "quantity": 1,
-            "unit_price": 49
-        }
-    ],
-    "payment_methods": {
-        "excluded_payment_types": [],
-        "installments": 1
-    },
-    "metadata": {
-        "target_url": "https://cliente-sitio.com",
-        "plan_id": "checkup",
-        "lang": "pt",
-        "payment_mode": "payment"
-    },
-    "external_reference": "mp_unique_session_id",
-    "notification_url": "https://api.dmsentinel.com/webhooks/mercadopago"
-}
-
-preference = sdk.preference().create(preference_data)
-init_point = preference["response"]["init_point"]  # Redirect URL
-```
-
-**Webhook Events:**
-- `payment.created` → Payment initiated
-- `payment.approved` → Payment confirmed (instant for PIX) → Triggers audit
-
-#### USDC (Coinbase Commerce)
-
-**Create Charge:**
-```python
-import coinbase_commerce
-
-client = coinbase_commerce.Client(api_key='YOUR_API_KEY')
-
-charge = client.charge.create(
-    name='DM Sentinel - Check-up',
-    description='Security Audit Report',
-    pricing_type='fixed_price',
-    local_price={
-        'amount': '49.00',
-        'currency': 'USD'
-    },
-    metadata={
-        'target_url': 'https://cliente-sitio.com',
-        'client_email': 'cliente@empresa.com',
-        'plan_id': 'checkup',
-        'lang': 'en',
-        'payment_mode': 'payment'
-    },
-    redirect_url='https://dmsentinel.com/success',
-    cancel_url='https://dmsentinel.com/cancel'
-)
-
-hosted_url = charge['hosted_url']  # Redirect to crypto payment page
-```
-
-**Webhook Events:**
-- `charge:confirmed` → Blockchain confirmation received → Triggers audit
-- `charge:resolved` → Payment finalized
-
----
-
-### 📱 Notificación Telegram Mejorada
-
-```
-🔴 ALERTA DM SENTINEL 🔴
-━━━━━━━━━━━━━━━━━━━━━━
-
-🎯 Target: https://cliente-sitio.com
-📧 Cliente: cliente@empresa.com
-📦 Plan: CORPORATE
-🔍 Session ID: cs_test_abc123
-
-📊 RESULTADO DE AUDITORÍA
-├─ Score: 45/100
-├─ Estado: CRÍTICO
-└─ Vulnerabilidades: 12
-
-⚠️ Top Vulnerabilidades:
-  1. WordPress desactualizado v5.8 [HIGH]
-  2. Plugin vulnerable Contact Form 7 [CRITICAL]
-  3. Cabecera HSTS ausente [MEDIUM]
-  ... y 9 más
-
-━━━━━━━━━━━━━━━━━━━━━━
-⏰ 2026-03-11 14:35:22
-🛡️ DM Sentinel v3.0
-
-[📄 Ver Reporte] [📧 Contactar] [🔗 Sitio]
-```
-
-### 📊 Flujo de Automatización
-
-**One-Time Payment (Checkup):**
-```
-1. Cliente paga → Stripe checkout.session.completed
-2. Stripe envía webhook con firma HMAC
-3. DM Sentinel verifica firma (construct_event)
-4. Extrae metadata: target_url, plan_id, client_email
-5. Detecta mode='payment' (one-time)
-6. Inicia thread asíncrono para auditoría
-7. Responde 200 OK a Stripe (< 100ms)
-8. [Thread] Registra en CRM: Status='Iniciando', Type='PAGO ÚNICO'
-9. [Thread] Ejecuta auditoría según plan
-10. [Thread] Genera PDF con reporte
-11. [Thread] Envía email al cliente con PDF adjunto
-12. [Thread] Actualiza CRM: Status='Completado'
-13. [Thread] Si score < umbral → Alerta Telegram con PDF adjunto
-```
-
-**Subscription (Sentinel/Pro):**
-```
-1. Cliente paga → Stripe checkout.session.completed (mode='subscription')
-2. Webhook procesado → Detecta subscription_id
-3. [Thread] Registra en CRM: Status='Iniciando', Type='SUSCRIPCIÓN ACTIVA', subscription_id
-4. [Thread] Ejecuta primera auditoría
-5. Stripe dispara: customer.subscription.created
-6. Sistema confirma suscripción activa
-7. --- Después de 30 días ---
-8. Stripe cobra automáticamente → invoice.payment_succeeded (billing_reason='subscription_cycle')
-9. Webhook detecta nuevo ciclo de facturación
-10. [Thread] Ejecuta auditoría mensual automática
-11. [Thread] Envía nuevo PDF al cliente
-12. [Thread] Actualiza CRM con fecha de última auditoría
-13. [Repeat paso 7-12 cada mes]
-```
-
-**Subscription Cancellation:**
-```
-1. Cliente cancela → Stripe customer.subscription.deleted
-2. Webhook recibido
-3. Sistema actualiza CRM: Status='SUSCRIPCIÓN CANCELADA'
-4. No más auditorías automáticas
-5. Telegram notifica cancelación al admin
-```
-
-**Mercado Pago/PIX:**
-```
-1. Cliente paga con PIX → payment.created
-2. PIX confirmado en <10 segundos → payment.approved
-3. Webhook /webhooks/mercadopago recibe notificación
-4. Recupera payment_info vía Mercado Pago API
-5. Verifica status='approved'
-6. Extrae metadata del preference
-7. [Thread] Ejecuta auditoría (igual que Stripe one-time)
-```
-
-**USDC Crypto:**
-```
-1. Cliente escanea QR con wallet → charge.created
-2. Transacción enviada a blockchain
-3. 12 confirmaciones requeridas (~3-5 mins)
-4. Coinbase Commerce dispara: charge:confirmed
-5. Webhook /webhooks/crypto recibe evento
-6. Verifica payment_status='CONFIRMED'
-7. Valida amount matches plan price (±2% tolerance)
-8. [Thread] Ejecuta auditoría
-```
-
----
-
-### 📝 Logs con Trazabilidad Forense
-
-```log
-[2026-03-11 14:35:20] [INFO] [Session: cs_abc123] Webhook recibido de Stripe
-[2026-03-11 14:35:20] [INFO] [Session: cs_abc123] Webhook verificado exitosamente
-[2026-03-11 14:35:20] [INFO] [Session: cs_abc123] Thread iniciado | ID: 12345
-[2026-03-11 14:35:35] [INFO] [Session: cs_abc123] Auditoría completada | Score: 45
-[2026-03-11 14:35:36] [WARNING] [Session: cs_abc123] Alerta enviada a Telegram
-[2026-03-11 14:35:37] [INFO] [Session: cs_abc123] Reporte guardado
-```
-
-**Buscar por session**:
-```bash
-grep "cs_abc123" sentinel_automation.log
-```
-
-### 🔐 Seguridad en Producción
-
-✅ **Checklist**:
-- Usar `STRIPE_WEBHOOK_SECRET` real de producción
-- Habilitar solo HTTPS (SSL/TLS)
-- Deshabilitar endpoint `/webhooks/stripe/test`
-- Configurar firewall (whitelist IPs de Stripe)
-- Rotar tokens periódicamente
-- Monitorear intentos fallidos
-
-📚 **Documentación Completa**: Ver [WEBHOOK_GUIDE.md](WEBHOOK_GUIDE.md)
-
----
-
-## 📊 Sprint 3: Google Sheets CRM & Persistencia
-
-Sistema de persistencia centralizado que transforma DM Sentinel en una plataforma completa de gestión del ciclo de vida del cliente.
-
-### 🎯 Arquitectura del Sistema
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              STRIPE PAYMENT WEBHOOK                          │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│         AUTOMATION ENGINE (Non-blocking Thread)              │
-│                                                              │
-│  [1] log_sale() → CRM_LEADS (Status: Iniciando)            │
-│  [2] DMSentinelAuditor.run_scan()                          │
-│  [3] log_audit() → AUDIT_LOGS (Technical Results)          │
-│  [4] update_sale_status() → CRM_LEADS (Status: Completado) │
-│  [5] send_telegram_alert() → Admin Notification            │
-└─────────────────────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 GOOGLE SHEETS SPREADSHEET                    │
-│                                                              │
-│  📋 CRM_LEADS (Sales & Customer Lifecycle)                  │
-│     - Fecha, Cliente, Email, Plan, Monto, SessionID         │
-│     - Status, Target URL, Language                          │
-│                                                              │
-│  🔍 AUDIT_LOGS (Technical Results & Metrics)                │
-│     - SessionID, Score, Grade, Risk Level                   │
-│     - Vulnerabilities (Critical, High, Medium, Low)         │
-│     - Duration, Conditional Formatting by Score             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### ✨ Características Principales
-
-#### 📋 CRM_LEADS (Hoja de Ventas)
-
-| Campo | Descripción | Ejemplo |
-|-------|-------------|---------|
-| **Fecha** | Timestamp de inicio | 2026-03-11 14:32:15 |
-| **Cliente** | Nombre extraído del email | johndoe |
-| **Email** | Email del cliente | johndoe@example.com |
-| **Plan** | Plan contratado (Lite/Corporate) | CORPORATE |
-| **SessionID** | Session ID de Stripe (PK) | cs_test_abc123def456 |
-| **Status** | Estado actual | 🟢 Completado |
-
-**Estados de Lifecycle:**
-- 🟡 `Iniciando` - Pago recibido, auditoría en cola
-- 🟢 `Completado` - Auditoría finalizada exitosamente
-- 🔴 `Error` - Auditoría falló o timeout
-
-#### 🔍 AUDIT_LOGS (Hoja Técnica)
-
-| Campo | Descripción | Ejemplo |
-|-------|-------------|---------|
-| **SessionID** | Session ID de Stripe (FK) | cs_test_abc123def456 |
-| **Score** | Security score (0-100) | 72 |
-| **Grade** | Calificación letra | B |
-| **Risk Level** | Nivel de riesgo | MEDIO |
-| **Critical** | Vulnerabilidades críticas | 0 |
-| **High** | Vulnerabilidades altas | 2 |
-| **Duration** | Duración de la auditoría (s) | 23.45 |
-
-**Formato Visual Automático:**
-- Score ≥ 70: 🟢 Fondo verde claro (seguro)
-- Score 50-69: 🟡 Fondo amarillo claro (riesgo medio)
-- Score < 50: 🔴 Fondo rojo claro (riesgo alto)
-
-### 🔐 Configuración Rápida
-
-```bash
-# 1. Instalar dependencias
-pip install gspread google-auth google-auth-oauthlib google-auth-httplib2
-
-# 2. Crear Service Account en Google Cloud Console
-# - Habilitar Google Sheets API y Google Drive API
-# - Crear Service Account: dm-sentinel-bot
-# - Descargar credentials.json
-
-# 3. Configurar variables de entorno
-export GOOGLE_SPREADSHEET_ID="1Abc2Def3Ghi4Jkl5Mno6Pqr7Stu8Vwx9Yz0"
-export GOOGLE_CREDENTIALS_PATH="credentials.json"
-
-# 4. Compartir spreadsheet con Service Account email:
-# dm-sentinel-bot@dm-sentinel-prod-XXXXXX.iam.gserviceaccount.com
-
-# 5. Test de integración
-python sheets_manager.py
-```
-
-### 🔄 Flujo de Datos Completo
-
-```python
-# Cliente paga en Stripe → Webhook → Background Thread ejecuta:
-
-# [1] Registro en CRM
-log_sale(
-    session_id="cs_test_abc123",
-    client_email="johndoe@example.com",
-    plan_id="corporate",
-    status="Iniciando"
-)
-
-# [2] Ejecución de auditoría
-auditor = DMSentinelAuditor(target_url, ...)
-report = auditor.run_scan()
-
-# [3] Registro técnico
-log_audit(
-    session_id="cs_test_abc123",
-    target_url="https://example.com",
-    audit_report=report,
-    duration=23.45
-)
-
-# [4] Actualización de status
-update_sale_status(session_id="cs_test_abc123", status="Completado")
-
-# [5] Notificación Telegram
-auditor.send_telegram_alert()
-```
-
-### 🛡️ Arquitectura Resiliente
-
-**Principio de No Bloqueo**: Fallos en Google Sheets NO detienen el flujo crítico.
-
-✅ **Sheets falla** → Telegram se envía igual (alertas nunca se pierden)  
-✅ **Auditoría falla** → Status en CRM se actualiza a "Error"  
-✅ **Logs forenses** → session_id tracking en TODAS las operaciones  
-
-### 📊 API del Sheets Manager
-
-```python
-from sheets_manager import SheetsManager
-
-manager = SheetsManager()
-
-# Registrar venta
-manager.log_sale(session_id, client_email, plan_id, ...)
-
-# Registrar auditoría
-manager.log_audit(session_id, target_url, audit_report, duration)
-
-# Actualizar status
-manager.update_sale_status(session_id, "Completado")
-
-# Obtener historial de cliente
-history = manager.get_client_history("client@example.com")
-
-# Estadísticas
-stats = manager.get_stats()
-# → {'total_sales': 150, 'completed_sales': 142, 'average_score': 68.5}
-```
-
-### 🧪 Testing End-to-End
-
-```bash
-# Test standalone
-python sheets_manager.py
-
-# Test con webhook simulado
-curl -X POST http://localhost:5000/webhooks/stripe/test \
-  -H "Content-Type: application/json" \
-  -d '{
-    "target_url": "https://example.com",
-    "client_email": "test@dmglobal.com",
-    "plan_id": "corporate",
-    "session_id": "test_manual_001"
-  }'
-
-# Verificar en Google Sheets:
-# → Nueva fila en CRM_LEADS con status "Completado"
-# → Nueva fila en AUDIT_LOGS con resultados
-```
-
-### 📖 Documentación Completa
-
-- 📘 **Guía completa**: [GOOGLE_SHEETS_GUIDE.md](GOOGLE_SHEETS_GUIDE.md)
-- 🔐 **Seguridad**: Service Account setup, rotación de keys, permisos
-- 🐛 **Troubleshooting**: SpreadsheetNotFound, APIError, quotas exceeded
-- 📊 **Dashboards**: Exportar a Data Studio, Power BI, Excel
-
----
-
-## 📄 Sprint 4: Generación de Entregables PDF
-
-Sistema de generación de reportes PDF profesionales con branding corporativo y soporte multiidioma.
-
-### 🎯 Características Principales
-
-#### 🎨 Diseño Profesional
-- **Branding corporativo**: Colores DM Global (Cyan #00D4FF)
-- **Header y footer**: Identidad visual consistente
-- **Código de colores por severidad**:
-  - 🔴 **Critical**: Rojo (#DC2626)
-  - 🟠 **High**: Naranja (#F97316)
-  - 🟡 **Medium**: Amarillo (#EAB308)
-  - 🟢 **Low**: Verde (#22C55E)
-- **Score badge visual**: Círculo de color con grade badge
-- **Tablas profesionales**: Con formato condicional y zebra striping
-
-#### 📊 Secciones del Reporte
-
-**1. Executive Summary (Resumen Ejecutivo)**
-- Target information (URL, fecha, session ID)
-- Security score badge prominente
-- Vulnerability summary por severidad
-- Recommendation basada en score
-
-**2. Detailed Findings (Hallazgos Detallados)**
-- Tabla completa de vulnerabilidades
-- Color coding por severidad
-- Categorías y descripción de impacto
-- Multi-page handling automático
-
-**3. Technical Mitigation Plan (Plan de Mitigación)**
-- Agrupado por prioridad (Critical → High → Medium → Low)
-- Descripción de cada vulnerabilidad
-- Recomendaciones técnicas de remediación
-- Comandos y configuraciones específicas
-
-#### 🌍 Internacionalización
-
-Soporte completo en **5 idiomas**:
-- 🇪🇸 Español (es)
-- 🇬🇧 English (en)
-- 🇫🇷 Français (fr)
-- 🇧🇷 Português (pt)
-- 🌐 Esperanto (eo)
-
-#### 📧 Email Delivery (Sprint 4 Final)
-
-Sistema profesional de entrega de reportes por correo electrónico:
-
-**Características:**
-- ✉️ **HTML Email Templates** con branding corporativo DM Global
-- 📎 **PDF Attachment** automático del reporte completo
-- 🌐 **Multi-idioma** (plantillas en 5 idiomas)
-- 🔒 **TLS Encryption** via SMTP (puerto 587)
-- 🎨 **Diseño responsive** con colores corporativos
-- 📊 **Score badge visual** prominente en el email
-
-**Contenido del Email:**
-- Saludo personalizado con nombre del cliente
-- Security Score destacado con colores (verde/amarillo/rojo)
-- Resumen de contenido del PDF adjunto
-- Información de contacto y session ID para trazabilidad
-- Footer con branding DM Global
-
-**Configuración SMTP:**
-
-```bash
-# Variables de entorno requeridas
-export SMTP_HOST='smtp.gmail.com'
-export SMTP_PORT='587'
-export SMTP_USER='your-email@gmail.com'
-export SMTP_PASSWORD='your-app-password'
-export SMTP_FROM_EMAIL='security@dmglobal.com'
-export SMTP_FROM_NAME='DM Global Security'
-```
-
-**Proveedores SMTP Soportados:**
-- ✅ Gmail (recomendado con App Password)
-- ✅ Office 365 / Outlook
-- ✅ SendGrid
-- ✅ Amazon SES
-- ✅ Cualquier servidor SMTP con TLS
-
-**Gmail App Password Setup:**
-1. Ir a [Google Account Settings](https://myaccount.google.com)
-2. Seguridad → Verificación en 2 pasos (habilitarla)
-3. Contraseñas de aplicación → Generar nueva
-4. Copiar password → Usar en `SMTP_PASSWORD`
-
-### 🔄 Integración en Workflow
-
-El flujo completo incluye generación de PDF **y envío automático por email** al cliente:
-
-```
-1. log_sale() → CRM_LEADS (Status: Iniciando)
-2. run_scan() → Ejecución de auditoría
-3. log_audit() → AUDIT_LOGS (Technical results)
-3.5. generate_pdf_report() → /reports/reporte_[session_id].pdf  ⭐
-3.7. send_email() → Email al cliente con PDF adjunto  ⭐ NUEVO
-4. update_sale_status() → CRM_LEADS (Status: Completado)
-5. send_telegram_alert() → Notificación admin + PDF adjunto
-```
-
-**Resultado:** Cliente recibe email profesional con PDF en **< 2 minutos** desde el pago.
-
-### 📁 Estructura de Archivos
-
-```
-reports/
-├── reporte_cs_live_abc123def456.pdf    # Cliente A (Corporate)
-├── reporte_cs_live_xyz789ghi012.pdf    # Cliente B (Lite)
-└── reporte_test_manual_001.pdf         # Test
-```
-
-**Nomenclatura**: `reporte_[session_id].pdf`  
-**Storage local**: Carpeta `/reports` creada automáticamente  
-**Delivery**: Telegram como documento adjunto (opcional)
-
-### 🔧 Configuración
-
-**Dependencia PDF:**
-
-```bash
-pip install fpdf2>=2.7.0
-```
-
-**Variables de entorno Email (Opcional):**
-
-```bash
-# Windows PowerShell
-$env:SMTP_USER='security@dmglobal.com'
-$env:SMTP_PASSWORD='your-app-password'
-$env:SMTP_HOST='smtp.gmail.com'
-$env:SMTP_PORT='587'
-
-# Linux/Mac
-export SMTP_USER='security@dmglobal.com'
-export SMTP_PASSWORD='your-app-password'
-export SMTP_HOST='smtp.gmail.com'
-export SMTP_PORT='587'
-```
-
-**Nota:** Si no se configuran las variables SMTP, el sistema genera el PDF y envía notificación Telegram, pero no envía email al cliente.
-
-### 🧪 Testing
-
-**Test 1: PDF Generator (standalone)**
-
-```powershell
-python test_sprint4.py
-```
-
-Genera 9 PDFs de prueba:
-- 3 niveles de score (Critical 35/100, Good 85/100, Perfect 98/100)
-- 3 idiomas cada uno (es, en, fr)
-- Output: `reports/reporte_*.pdf`
-
-**Test 2: Email Delivery (standalone)**
-
-```powershell
-# Configure SMTP first
-$env:SMTP_USER='your-email@gmail.com'
-$env:SMTP_PASSWORD='your-app-password'
-
-# Run email test
-python test_email.py
-```
-
-Tests realizados:
-- ✅ SMTP connection validation
-- ✅ Single email delivery with PDF attachment
-- ✅ Multi-language email templates (optional)
-- ✅ Interactive custom email test (optional)
-
-**Test 3: Integración completa (End-to-End)**
-
-```powershell
-# Terminal 1
-python sentinelautomationengine.py
-
-# Terminal 2
-python test_sprint3.py  # Ya incluye generación de PDF
-```
-
-### 📊 Especificaciones Técnicas
-
-#### Motor PDF: FPDF2
-
-- **Librería**: fpdf2 v2.7+ (moderna, mantenida activamente)
-- **Ventajas sobre ReportLab**:
-  - Más ligera (no requiere dependencias externas)
-  - API más simple y Pythonic
-  - Mejor soporte para Unicode y fuentes
-  - Documentación excelente
-
-#### Características Técnicas
-
-```python
-from report_generator import generate_pdf_report
-
-# Generar PDF desde audit report
-success = generate_pdf_report(
-    audit_report=report,      # Dict from DMSentinelAuditor.run_scan()
-    output_path="reports/reporte_session123.pdf",
-    language="es"             # es, en, fr, pt, eo
-)
-```
-
-**Data Binding:**
-- Input: JSON producido por `DMSentinelAuditor.run_scan()`
-- Output: PDF con formato profesional
-
-**Layout Features:**
-- Multi-page handling con `auto_page_break`
-- Tablas que no se cortan entre páginas (`multi_cell`)
-- Headers y footers automáticos en cada página
-- Paginación dinámica: "Página X/Y"
-
-#### Clase DMSentinelPDF
-
-```python
-class DMSentinelPDF(FPDF):
-    """Custom FPDF with DM Sentinel branding."""
-    
-    def header(self):
-        """Page header con logo DM SENTINEL"""
+    def analyze(self, target_url: str) -> List[Dict]:
+        """
+        Test forms for SQL injection vulnerabilities.
         
-    def footer(self):
-        """Page footer con session ID y paginación"""
+        Args:
+            target_url: Target website URL
+            
+        Returns:
+            List of vulnerability findings
+        """
+        findings = []
         
-    def chapter_title(self, title, icon):
-        """Título de capítulo con icono"""
+        # Implement analysis logic
+        # ...
         
-    def add_score_box(self, score, grade, risk_level):
-        """Badge visual de score prominente"""
-        
-    def add_vulnerability_table(self, vulnerabilities):
-        """Tabla con color coding por severidad"""
-        
-    def add_mitigation_plan(self, vulnerabilities):
-        """Plan técnico agrupado por prioridad"""
-```
-
-### 📱 Telegram Integration
-
-**Envío automático del PDF como adjunto:**
-
-```python
-# En execute_audit_async() - Paso 5
-if pdf_path and os.path.exists(pdf_path):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
-    
-    with open(pdf_path, 'rb') as pdf_file:
-        files = {'document': pdf_file}
-        data = {
-            'chat_id': CHAT_ID,
-            'caption': f'📄 Reporte PDF - Session: {session_id}'
-        }
-        
-        response = requests.post(url, files=files, data=data, timeout=30)
-```
-
-**Resultado en Telegram:**
-
-1. **Mensaje de alerta** (MarkdownV2 con botones inline)
-2. **PDF adjunto** (reporte completo descargable)
-
-### 🎓 Ejemplo de Flujo Completo
-
-```
-Cliente paga $99 en Stripe por auditoría Corporate
-    ↓
-Stripe envía webhook → sentinelautomationengine.py
-    ↓
-[PASO 1] log_sale() → Google Sheets CRM_LEADS (Status: Iniciando)
-    ↓
-[PASO 2] run_scan() → Auditoría ejecutada (Score: 72/100, 12 vulns)
-    ↓
-[PASO 3] log_audit() → Google Sheets AUDIT_LOGS
-    ↓
-[PASO 3.5] generate_pdf_report() → reports/reporte_cs_abc123.pdf  ⭐
-    • Resumen ejecutivo con score badge
-    • Tabla de 12 vulnerabilidades con colores
-    • Plan de mitigación técnico en español
-    ↓
-[PASO 3.7] send_email() → Email al cliente (client@example.com)  ⭐ NUEVO
-    • Subject: 🛡️ Tu Reporte de Seguridad - DM Sentinel
-    • HTML email con branding DM Global
-    • PDF adjunto: reporte_cs_abc123.pdf
-    • Tiempo de entrega: < 5 segundos
-    ↓
-[PASO 4] update_sale_status() → Google Sheets (Status: Completado)
-    ↓
-[PASO 5] send_telegram_alert() → Notificación admin MarkdownV2
-         + PDF adjunto 📄 reporte_cs_abc123.pdf
-```
-
-**Tiempo total**: < 2 minutos desde pago hasta:
-- ✅ Reporte PDF en bandeja de entrada del cliente
-- ✅ Notificación admin en Telegram
-- ✅ Registros completos en Google Sheets
-
-**Resultado:** Cliente recibe servicio completo inmediatamente tras el pago 🚀
-
-### 🛡️ Error Handling
-
-**Arquitectura Resiliente:**
-
-```python
-# PDF generation is NON-BLOCKING
-if PDF_AVAILABLE and report:
-    try:
-        generate_pdf_report(...)
-    except Exception as e:
-        logger.error(f"[PDF] Error (no bloqueante): {e}")
-        pdf_path = None  # Continue without PDF
-
-# Email delivery is NON-BLOCKING (NEW)
-if EMAIL_AVAILABLE and pdf_path:
-    try:
-        send_email(...)
-    except Exception as e:
-        logger.error(f"[EMAIL] Error (no bloqueante): {e}")
-        # Continue workflow
-
-# Telegram alert ALWAYS sent
-send_telegram_alert()  # GUARANTEED
-
-# PDF attachment is OPTIONAL
-if pdf_path:
-    send_telegram_document(pdf_path)  # Best-effort
-```
-
-**Garantías:**
-
-✅ **PDF falla** → Auditoría continúa, no se envía email, Sheets actualizado, Telegram enviado  
-✅ **Email falla** → PDF generado localmente, Sheets actualizado, Telegram enviado  
-✅ **Telegram falla** → PDF generado, Email enviado, Sheets actualizado  
-✅ **Sheets falla** → PDF, Email y Telegram funcionan independientemente  
-
-**Arquitectura no bloqueante:** Cada subsistema puede fallar sin afectar a los demás.
-
-### 📖 Recursos
-
-- 📄 **Test PDF**: [test_sprint4.py](test_sprint4.py) - Generación de PDFs de prueba
-- 📧 **Test Email**: [test_email.py](test_email.py) - Validación de entrega de emails
-- 🎨 **PDF Generator**: [report_generator.py](report_generator.py) (850+ líneas)
-- ✉️ **Email Manager**: [email_manager.py](email_manager.py) (600+ líneas)
-- 📘 **FPDF2 Docs**: [pyfpdf.github.io/fpdf2](https://pyfpdf.github.io/fpdf2/)
-- 📬 **SMTP Guide**: Ver sección "Email Delivery Configuration" arriba
-
----
-
-## 🌐 Sentinel Automation Engine (Legacy)
-
-Integración con Webhooks para auditorías automáticas tras pagos:
-
-```python
-from sentinelautomationengine import app
-
-# Configurar Telegram
-TELEGRAM_BOT_TOKEN = "your_bot_token"
-TELEGRAM_CHAT_ID = "your_chat_id"
-
-# Ejecutar servidor
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
-```
-
-**Configuración de Stripe**:
-- Webhook URL: `https://your-domain.com/webhooks/stripe`
-- Evento: `checkout.session.completed`
-- Metadatos requeridos: `target_url`, `lang`
-
-**Flujo de automatización**:
-1. Cliente paga → Stripe genera evento
-2. Webhook recibe evento → Extrae `target_url`
-3. DM Sentinel ejecuta auditoría automática
-4. Si score < 70 → Alerta vía Telegram
-5. Reporte guardado en JSON
-
----
-
-## 📊 Arquitectura de Módulos
-
-```
-dmsentinel/
-├── sentinel_core.py          # Motor de auditoría principal (1650 líneas)
-├── sentinel_i18n.py          # Sistema multiidioma
-├── sentinel_sheets.py        # Integración Google Sheets
-├── sentinel_pdf.py           # Generación de PDFs
-├── sentinel_api.py           # API REST con Flask
-├── sentinel_multi.py         # Scanner multi-target
-├── sentinel_history.py       # Tracking histórico SQLite
-├── sentinelautomationengine.py  # Webhook automation
-├── vulnerabilities_db.json   # Base de datos CVEs (200+)
-├── remediation_db.json       # Base de datos remediaciones (40+)
-├── locales/
-│   ├── es.json              # Español
-│   ├── en.json              # English
-│   ├── fr.json              # Français
-│   ├── pt.json              # Português
-│   └── eo.json              # Esperanto
-├── requirements.txt          # Dependencias Python
-├── README.md                 # Documentación
-└── scans/                    # Directorio de scans (auto-creado)
+        return findings
 ```
 
 ---
 
-## 🎯 Sistema de Scoring
+## 📄 License
 
-### Weighted Scoring Algorithm v2.0
+MIT License - Copyright (c) 2026 DM Global
 
-| Categoría | Multiplicador | Impacto |
-|-----------|--------------|---------|
-| **Credenciales Expuestas** | 2.0x | -40 puntos |
-| **Remote Code Execution** | 1.8x | -36 puntos |
-| **SQL Injection** | 1.7x | -34 puntos |
-| **XSS Stored** | 1.5x | -30 puntos |
-| **CSRF** | 1.3x | -26 puntos |
-| **Misconfigurations** | 1.2x | -24 puntos |
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-### Grados de Seguridad
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-| Score | Grado | Nivel de Riesgo |
-|-------|-------|-----------------|
-| 90-100 | A+ | BAJO |
-| 80-89 | A | BAJO |
-| 70-79 | B | MEDIO |
-| 60-69 | C | MEDIO |
-| 50-59 | D | ALTO |
-| 0-49 | F | CRÍTICO |
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 
-## 🔐 Seguridad
+## 📞 Contact
 
-- **API Keys**: Sistema de autenticación con hashing SHA256
-- **Input Validation**: Sanitización de URLs y parámetros
-- **Rate Limiting**: Implementar con Flask-Limiter (recomendado)
-- **HTTPS Only**: Forzar SSL en producción
-- **Secrets Management**: Variables de entorno para credenciales
+<div align="center">
 
----
+**DM Global - Cybersecurity Division**
 
-## 🌍 Idiomas Soportados
-
-| Código | Idioma | Cobertura |
-|--------|--------|-----------|
-| `es` | Español | 100% |
-| `en` | English | 100% |
-| `fr` | Français | 100% |
-| `pt` | Português | 100% |
-| `eo` | Esperanto | 100% |
+🌐 Website: [dmsentinel.com](https://dmsentinel.com)  
+📧 Email: [security@dmglobal.com](mailto:security@dmglobal.com)  
+💬 Telegram: [@dmsentinel_bot](https://t.me/dmsentinel_bot)  
+🐦 Twitter: [@dmsentinel](https://twitter.com/dmsentinel)  
+💼 LinkedIn: [DM Global](https://linkedin.com/company/dmglobal)
 
 ---
 
-## 📈 Roadmap v4.0 (Futuro)
+**Built with ❤️ by the DM Global Security Team**
 
-- [ ] Machine Learning para detección de anomalías
-- [ ] Integración con SIEM (Splunk, ELK)
-- [ ] Dashboard web interactivo con React
-- [ ] Soporte para APIs GraphQL
-- [ ] Análisis de containers Docker/Kubernetes
-- [ ] Compliance frameworks (OWASP, NIST, ISO 27001)
-- [ ] Integración con Jira para tickets automáticos
-- [ ] Mobile app para reportes
+⭐ Star us on GitHub if DM Sentinel helps secure your infrastructure!
 
----
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork del repositorio
-2. Crear branch de feature (`git checkout -b feature/AmazingFeature`)
-3. Commit de cambios (`git commit -m 'Add AmazingFeature'`)
-4. Push al branch (`git push origin feature/AmazingFeature`)
-5. Abrir Pull Request
-
----
-
-## 📝 Changelog
-
-### v3.0 (2026-03-11)
-- ✅ Sistema multiidioma completo (5 idiomas)
-- ✅ Integración con Google Sheets
-- ✅ Generación de PDFs con ReportLab
-- ✅ API REST con Flask
-- ✅ Multi-target scanner con threading
-- ✅ Historical tracking con SQLite
-- ✅ Expanded vulnerability database (200+ CVEs)
-
-### v2.0 (2026-03-10)
-- ✅ Advanced modules: DNS/Email, Stack Detection, Server Hardening
-- ✅ Weighted scoring system
-- ✅ Professional logging
-- ✅ Expanded remediation database
-
-### v1.0 (2026-03-09)
-- ✅ Core scanning engine
-- ✅ CMS detection (WordPress, Drupal, Joomla, Moodle)
-- ✅ SSL/TLS analysis
-- ✅ Basic vulnerability detection
-
----
-
-## 📄 Licencia
-
-MIT License - Ver [LICENSE](LICENSE) para más detalles.
-
----
-
-## 🏢 DM Global - DM Sentinel
-
-**Contacto**: [marcelodanieldm](https://github.com/marcelodanieldm)  
-**Proyecto**: [dmsentinel](https://github.com/marcelodanieldm/dmsentinel)  
-**Versión**: 3.0.0  
-**Última actualización**: 2026-03-11
-
----
-
-**🛡️ Protegiendo activos digitales con inteligencia avanzada**
+</div>
