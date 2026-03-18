@@ -1,39 +1,64 @@
+# DM Sentinel Red Team - Infrastructure Stack
+# Docker Compose configuration for Gophish + Moodle
+# Optimized for low-resource VPS (2GB RAM, 2 CPU cores)
+# 
+# Tech Lead: DM Sentinel Security Team
+# Date: 2025-03-12
+# Version: 1.0.0
+
 version: '3.8'
 
-# DM Sentinel RedTeam - Phishing Simulation Infrastructure
-# Gophish + Moodle + PostgreSQL + SMTP Relay
-# Optimized for low-resource VPS (2GB RAM minimum)
+networks:
+  redteam_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  gophish_data:
+    driver: local
+  moodle_data:
+    driver: local
+  moodle_db_data:
+    driver: local
+  nginx_certs:
+    driver: local
+  nginx_conf:
+    driver: local
 
 services:
   # ==========================================
-  # Gophish - Phishing Simulation Platform
+  # GOPHISH - Phishing Simulation Platform
   # ==========================================
   gophish:
     image: gophish/gophish:latest
-    container_name: dm-sentinel-gophish
+    container_name: dm_gophish
     restart: unless-stopped
     ports:
-      - "3333:3333"  # Admin panel (HTTPS)
-      - "8080:80"    # Phishing server (HTTP)
+      - "3333:3333"  # Admin interface (internal only)
+      - "8080:80"    # Phishing server (public)
     volumes:
-      - gophish_data:/app/gophish/data
+      - gophish_data:/app/gophish
       - ./config/gophish/config.json:/app/gophish/config.json:ro
       - ./logs/gophish:/app/gophish/logs
     environment:
-      - GOPHISH_INITIAL_ADMIN_PASSWORD=${GOPHISH_ADMIN_PASSWORD:-ChangeMeNow123!}
-      - TZ=America/New_York
+      - GOPHISH_INITIAL_ADMIN_PASSWORD=${GOPHISH_ADMIN_PASSWORD:-DM_Sentinel_2025!}
+      - TZ=America/Sao_Paulo
     networks:
-      - dm-sentinel-net
+      redteam_network:
+        ipv4_address: 172.28.0.10
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3333/login"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    labels:
-      - "com.dm-sentinel.service=gophish"
-      - "com.dm-sentinel.environment=production"
-    # Resource limits for low-resource VPS
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -44,29 +69,41 @@ services:
           memory: 256M
 
   # ==========================================
-  # PostgreSQL - Database for Moodle
+  # MOODLE DATABASE - MariaDB
   # ==========================================
-  postgres:
-    image: postgres:15-alpine
-    container_name: dm-sentinel-postgres
+  moodle_db:
+    image: mariadb:10.11
+    container_name: dm_moodle_db
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-moodle}
-      - POSTGRES_USER=${POSTGRES_USER:-moodleuser}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-MoodleSecure2024!}
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8
-      - TZ=America/New_York
+      - MYSQL_ROOT_PASSWORD=${MOODLE_DB_ROOT_PASSWORD:-DM_Moodle_Root_2025!}
+      - MYSQL_DATABASE=moodle
+      - MYSQL_USER=moodleuser
+      - MYSQL_PASSWORD=${MOODLE_DB_PASSWORD:-DM_Moodle_User_2025!}
+      - TZ=America/Sao_Paulo
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups/postgres:/backups
+      - moodle_db_data:/var/lib/mysql
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     networks:
-      - dm-sentinel-net
+      redteam_network:
+        ipv4_address: 172.28.0.20
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max_connections=50
+      --innodb_buffer_pool_size=128M
+      --innodb_log_file_size=32M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moodleuser}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MOODLE_DB_ROOT_PASSWORD:-DM_Moodle_Root_2025!}"]
       interval: 30s
       timeout: 10s
       retries: 3
-    # Resource limits
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -75,71 +112,64 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-    # Security: non-root user
-    user: postgres
 
   # ==========================================
-  # Moodle - Security Awareness Training Platform
+  # MOODLE - Learning Management System
   # ==========================================
   moodle:
     image: bitnami/moodle:4.3
-    container_name: dm-sentinel-moodle
+    container_name: dm_moodle
     restart: unless-stopped
     ports:
-      - "8081:8080"  # Moodle HTTP
-      - "8443:8443"  # Moodle HTTPS
+      - "8081:8080"   # HTTP (will be proxied)
+      - "8443:8443"   # HTTPS (will be proxied)
     depends_on:
-      - postgres
+      moodle_db:
+        condition: service_healthy
     environment:
-      # Database configuration
-      - MOODLE_DATABASE_TYPE=pgsql
-      - MOODLE_DATABASE_HOST=postgres
-      - MOODLE_DATABASE_PORT_NUMBER=5432
-      - MOODLE_DATABASE_NAME=${POSTGRES_DB:-moodle}
-      - MOODLE_DATABASE_USER=${POSTGRES_USER:-moodleuser}
-      - MOODLE_DATABASE_PASSWORD=${POSTGRES_PASSWORD:-MoodleSecure2024!}
+      # Database Configuration
+      - MOODLE_DATABASE_HOST=moodle_db
+      - MOODLE_DATABASE_PORT_NUMBER=3306
+      - MOODLE_DATABASE_NAME=moodle
+      - MOODLE_DATABASE_USER=moodleuser
+      - MOODLE_DATABASE_PASSWORD=${MOODLE_DB_PASSWORD:-DM_Moodle_User_2025!}
       
-      # Moodle admin credentials
-      - MOODLE_USERNAME=${MOODLE_ADMIN_USER:-admin}
-      - MOODLE_PASSWORD=${MOODLE_ADMIN_PASSWORD:-AdminSecure2024!}
-      - MOODLE_EMAIL=${MOODLE_ADMIN_EMAIL:-admin@dmsentinel.com}
+      # Moodle Admin Configuration
+      - MOODLE_USERNAME=admin
+      - MOODLE_PASSWORD=${MOODLE_ADMIN_PASSWORD:-DM_Admin_2025!}
+      - MOODLE_EMAIL=${MOODLE_ADMIN_EMAIL:-admin@dmsentinel.redteam}
+      - MOODLE_SITE_NAME=DM Sentinel Learning Platform
       
-      # Site configuration
-      - MOODLE_SITE_NAME=DM Sentinel Security Training
-      - MOODLE_SKIP_BOOTSTRAP=no
-      - MOODLE_SKIP_INSTALL=no
+      # Site Configuration
+      - MOODLE_HOST=${MOODLE_HOST:-lms.dmsentinel.redteam}
+      - MOODLE_REVERSEPROXY=yes
+      - MOODLE_SSLPROXY=yes
       
-      # SMTP configuration (use your SMTP relay)
-      - MOODLE_SMTP_HOST=${SMTP_HOST:-smtp.sendgrid.net}
-      - MOODLE_SMTP_PORT=${SMTP_PORT:-587}
-      - MOODLE_SMTP_USER=${SMTP_USER:-apikey}
-      - MOODLE_SMTP_PASSWORD=${SMTP_PASSWORD:-your-sendgrid-api-key}
-      - MOODLE_SMTP_PROTOCOL=tls
-      
-      # Performance optimization
+      # Performance Optimization
       - PHP_MEMORY_LIMIT=256M
       - PHP_MAX_EXECUTION_TIME=300
-      - PHP_UPLOAD_MAX_FILESIZE=50M
       - PHP_POST_MAX_SIZE=50M
+      - PHP_UPLOAD_MAX_FILESIZE=50M
       
-      - TZ=America/New_York
+      # Timezone
+      - TZ=America/Sao_Paulo
     volumes:
       - moodle_data:/bitnami/moodle
-      - moodledata:/bitnami/moodledata
-      - ./config/moodle/config.php:/bitnami/moodle/config.php:ro
-      - ./logs/moodle:/bitnami/moodle/logs
+      - ./logs/moodle:/opt/bitnami/apache/logs
     networks:
-      - dm-sentinel-net
+      redteam_network:
+        ipv4_address: 172.28.0.30
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/login/index.php"]
-      interval: 60s
-      timeout: 15s
+      interval: 30s
+      timeout: 10s
       retries: 3
       start_period: 120s
-    labels:
-      - "com.dm-sentinel.service=moodle"
-      - "com.dm-sentinel.environment=production"
-    # Resource limits
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -150,151 +180,200 @@ services:
           memory: 512M
 
   # ==========================================
-  # SMTP Relay (Postfix) - Optional local relay
-  # ==========================================
-  # Uncomment if you need a local SMTP relay instead of external service
-  # smtp-relay:
-  #   image: boky/postfix:latest
-  #   container_name: dm-sentinel-smtp
-  #   restart: unless-stopped
-  #   environment:
-  #     - ALLOWED_SENDER_DOMAINS=${ALLOWED_DOMAINS:-dmsentinel.com}
-  #     - RELAYHOST=[smtp.sendgrid.net]:587
-  #     - RELAYHOST_USERNAME=${SMTP_USER:-apikey}
-  #     - RELAYHOST_PASSWORD=${SMTP_PASSWORD:-your-api-key}
-  #     - LOG_LEVEL=info
-  #   ports:
-  #     - "25:25"
-  #   networks:
-  #     - dm-sentinel-net
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '0.25'
-  #         memory: 256M
-
-  # ==========================================
-  # Nginx Reverse Proxy (Optional)
+  # NGINX - Reverse Proxy & SSL Termination
   # ==========================================
   nginx:
     image: nginx:alpine
-    container_name: dm-sentinel-nginx
+    container_name: dm_nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - ./logs/nginx:/var/log/nginx
+      - "80:80"       # HTTP
+      - "443:443"     # HTTPS
     depends_on:
       - gophish
       - moodle
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_certs:/etc/nginx/certs:ro
+      - ./logs/nginx:/var/log/nginx
     networks:
-      - dm-sentinel-net
+      redteam_network:
+        ipv4_address: 172.28.0.5
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
           cpus: '0.25'
           memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   # ==========================================
-  # Log Aggregator (Fluentd) - Optional
+  # POSTFIX - Mail Server (SMTP)
   # ==========================================
-  # fluentd:
-  #   image: fluent/fluentd:v1.16-1
-  #   container_name: dm-sentinel-logs
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./config/fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
-  #     - ./logs:/logs
-  #   networks:
-  #     - dm-sentinel-net
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '0.25'
-  #         memory: 256M
+  postfix:
+    image: boky/postfix:latest
+    container_name: dm_postfix
+    restart: unless-stopped
+    ports:
+      - "25:25"      # SMTP
+      - "587:587"    # SMTP Submission
+    environment:
+      # Domain Configuration
+      - HOSTNAME=${MAIL_HOSTNAME:-mail.dmsentinel.redteam}
+      - ALLOWED_SENDER_DOMAINS=${MAIL_DOMAIN:-dmsentinel.redteam}
+      
+      # Authentication
+      - POSTFIX_myhostname=${MAIL_HOSTNAME:-mail.dmsentinel.redteam}
+      - POSTFIX_mydomain=${MAIL_DOMAIN:-dmsentinel.redteam}
+      
+      # Security
+      - POSTFIX_smtpd_tls_cert_file=/etc/ssl/certs/mail.crt
+      - POSTFIX_smtpd_tls_key_file=/etc/ssl/private/mail.key
+      - POSTFIX_smtpd_use_tls=yes
+      - POSTFIX_smtpd_tls_security_level=may
+      
+      # Rate Limiting
+      - POSTFIX_smtpd_client_connection_rate_limit=10
+      - POSTFIX_smtpd_client_message_rate_limit=20
+      
+      # Logging
+      - LOG_FORMAT=json
+      - TZ=America/Sao_Paulo
+    volumes:
+      - ./config/postfix/main.cf:/etc/postfix/main.cf:ro
+      - ./config/postfix/certs:/etc/ssl/certs:ro
+      - ./config/postfix/private:/etc/ssl/private:ro
+      - ./logs/postfix:/var/log/postfix
+    networks:
+      redteam_network:
+        ipv4_address: 172.28.0.40
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "25"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # ==========================================
+  # REDIS - Caching Layer (Optional)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: dm_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - ./data/redis:/data
+    networks:
+      redteam_network:
+        ipv4_address: 172.28.0.50
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ==========================================
+  # WATCHTOWER - Auto-Update Containers
+  # ==========================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: dm_watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # 24 hours
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - TZ=America/Sao_Paulo
+    networks:
+      redteam_network:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
 
 # ==========================================
-# Networks
+# CONFIGURATION NOTES
 # ==========================================
-networks:
-  dm-sentinel-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
-
-# ==========================================
-# Persistent Volumes
-# ==========================================
-volumes:
-  gophish_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data/gophish
-      o: bind
-  
-  postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data/postgres
-      o: bind
-  
-  moodle_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data/moodle
-      o: bind
-  
-  moodledata:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data/moodledata
-      o: bind
-
-# ==========================================
-# USAGE INSTRUCTIONS
-# ==========================================
+#
+# RESOURCE ALLOCATION (Total: ~2GB RAM, 2 CPUs):
+# - Gophish:    512MB RAM, 0.5 CPU
+# - Moodle:     1024MB RAM, 1.0 CPU
+# - MariaDB:    512MB RAM, 0.5 CPU
+# - Others:     ~500MB RAM, 0.5 CPU (combined)
+#
+# DEPLOYMENT STEPS:
 # 1. Copy .env.example to .env and configure variables
 # 2. Create required directories:
-#    mkdir -p data/{gophish,postgres,moodle,moodledata} logs/{gophish,moodle,nginx} config/{gophish,moodle,nginx/conf.d} ssl backups/postgres
-# 3. Start services:
-#    docker-compose up -d
-# 4. Check logs:
-#    docker-compose logs -f
-# 5. Access services:
-#    - Gophish Admin: https://your-domain:3333
-#    - Moodle: http://your-domain:8081
+#    mkdir -p config/{gophish,nginx/conf.d,postfix/{certs,private},mysql} logs/{gophish,moodle,nginx,postfix} data/redis
+# 3. Generate SSL certificates (see infrastructure_setup.md)
+# 4. Configure DNS records (see infrastructure_setup.md)
+# 5. Deploy: docker-compose up -d
+# 6. Check logs: docker-compose logs -f
+# 7. Verify health: docker-compose ps
 #
-# SECURITY NOTES:
-# - Change all default passwords in .env file
-# - Configure SSL certificates in ssl/ directory
-# - Set up firewall rules to restrict access
-# - Enable Docker secrets for production
-# - Configure backup strategy for volumes
-# - Monitor resource usage: docker stats
+# SECURITY CONSIDERATIONS:
+# - Change all default passwords in .env
+# - Use strong SSL/TLS certificates
+# - Enable firewall (UFW): allow 80,443,25,587
+# - Configure fail2ban for brute force protection
+# - Regular backups of volumes
+# - Monitor resource usage
+# - Rotate logs regularly
 #
-# LOW-RESOURCE VPS OPTIMIZATION:
-# - Total RAM usage: ~2GB (with all services)
-# - CPU usage: ~1.5 cores under load
-# - Disk space: ~10GB recommended
-# - Swap: 2GB recommended (add if not present)
-#
-# To add swap on Linux:
-# sudo fallocate -l 2G /swapfile
-# sudo chmod 600 /swapfile
-# sudo mkswap /swapfile
-# sudo swapon /swapfile
-# echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+# MAINTENANCE:
+# - Backup: docker-compose exec moodle_db mysqldump -u root -p moodle > backup.sql
+# - Restore: docker-compose exec -T moodle_db mysql -u root -p moodle < backup.sql
+# - Update: docker-compose pull && docker-compose up -d
+# - Logs: docker-compose logs --since 1h -f [service]
