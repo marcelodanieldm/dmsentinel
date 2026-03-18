@@ -1,0 +1,300 @@
+version: '3.8'
+
+# DM Sentinel RedTeam - Phishing Simulation Infrastructure
+# Gophish + Moodle + PostgreSQL + SMTP Relay
+# Optimized for low-resource VPS (2GB RAM minimum)
+
+services:
+  # ==========================================
+  # Gophish - Phishing Simulation Platform
+  # ==========================================
+  gophish:
+    image: gophish/gophish:latest
+    container_name: dm-sentinel-gophish
+    restart: unless-stopped
+    ports:
+      - "3333:3333"  # Admin panel (HTTPS)
+      - "8080:80"    # Phishing server (HTTP)
+    volumes:
+      - gophish_data:/app/gophish/data
+      - ./config/gophish/config.json:/app/gophish/config.json:ro
+      - ./logs/gophish:/app/gophish/logs
+    environment:
+      - GOPHISH_INITIAL_ADMIN_PASSWORD=${GOPHISH_ADMIN_PASSWORD:-ChangeMeNow123!}
+      - TZ=America/New_York
+    networks:
+      - dm-sentinel-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3333/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.dm-sentinel.service=gophish"
+      - "com.dm-sentinel.environment=production"
+    # Resource limits for low-resource VPS
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # PostgreSQL - Database for Moodle
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: dm-sentinel-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-moodle}
+      - POSTGRES_USER=${POSTGRES_USER:-moodleuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-MoodleSecure2024!}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8
+      - TZ=America/New_York
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups/postgres:/backups
+    networks:
+      - dm-sentinel-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moodleuser}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    # Security: non-root user
+    user: postgres
+
+  # ==========================================
+  # Moodle - Security Awareness Training Platform
+  # ==========================================
+  moodle:
+    image: bitnami/moodle:4.3
+    container_name: dm-sentinel-moodle
+    restart: unless-stopped
+    ports:
+      - "8081:8080"  # Moodle HTTP
+      - "8443:8443"  # Moodle HTTPS
+    depends_on:
+      - postgres
+    environment:
+      # Database configuration
+      - MOODLE_DATABASE_TYPE=pgsql
+      - MOODLE_DATABASE_HOST=postgres
+      - MOODLE_DATABASE_PORT_NUMBER=5432
+      - MOODLE_DATABASE_NAME=${POSTGRES_DB:-moodle}
+      - MOODLE_DATABASE_USER=${POSTGRES_USER:-moodleuser}
+      - MOODLE_DATABASE_PASSWORD=${POSTGRES_PASSWORD:-MoodleSecure2024!}
+      
+      # Moodle admin credentials
+      - MOODLE_USERNAME=${MOODLE_ADMIN_USER:-admin}
+      - MOODLE_PASSWORD=${MOODLE_ADMIN_PASSWORD:-AdminSecure2024!}
+      - MOODLE_EMAIL=${MOODLE_ADMIN_EMAIL:-admin@dmsentinel.com}
+      
+      # Site configuration
+      - MOODLE_SITE_NAME=DM Sentinel Security Training
+      - MOODLE_SKIP_BOOTSTRAP=no
+      - MOODLE_SKIP_INSTALL=no
+      
+      # SMTP configuration (use your SMTP relay)
+      - MOODLE_SMTP_HOST=${SMTP_HOST:-smtp.sendgrid.net}
+      - MOODLE_SMTP_PORT=${SMTP_PORT:-587}
+      - MOODLE_SMTP_USER=${SMTP_USER:-apikey}
+      - MOODLE_SMTP_PASSWORD=${SMTP_PASSWORD:-your-sendgrid-api-key}
+      - MOODLE_SMTP_PROTOCOL=tls
+      
+      # Performance optimization
+      - PHP_MEMORY_LIMIT=256M
+      - PHP_MAX_EXECUTION_TIME=300
+      - PHP_UPLOAD_MAX_FILESIZE=50M
+      - PHP_POST_MAX_SIZE=50M
+      
+      - TZ=America/New_York
+    volumes:
+      - moodle_data:/bitnami/moodle
+      - moodledata:/bitnami/moodledata
+      - ./config/moodle/config.php:/bitnami/moodle/config.php:ro
+      - ./logs/moodle:/bitnami/moodle/logs
+    networks:
+      - dm-sentinel-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/login/index.php"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "com.dm-sentinel.service=moodle"
+      - "com.dm-sentinel.environment=production"
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ==========================================
+  # SMTP Relay (Postfix) - Optional local relay
+  # ==========================================
+  # Uncomment if you need a local SMTP relay instead of external service
+  # smtp-relay:
+  #   image: boky/postfix:latest
+  #   container_name: dm-sentinel-smtp
+  #   restart: unless-stopped
+  #   environment:
+  #     - ALLOWED_SENDER_DOMAINS=${ALLOWED_DOMAINS:-dmsentinel.com}
+  #     - RELAYHOST=[smtp.sendgrid.net]:587
+  #     - RELAYHOST_USERNAME=${SMTP_USER:-apikey}
+  #     - RELAYHOST_PASSWORD=${SMTP_PASSWORD:-your-api-key}
+  #     - LOG_LEVEL=info
+  #   ports:
+  #     - "25:25"
+  #   networks:
+  #     - dm-sentinel-net
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.25'
+  #         memory: 256M
+
+  # ==========================================
+  # Nginx Reverse Proxy (Optional)
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: dm-sentinel-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - gophish
+      - moodle
+    networks:
+      - dm-sentinel-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==========================================
+  # Log Aggregator (Fluentd) - Optional
+  # ==========================================
+  # fluentd:
+  #   image: fluent/fluentd:v1.16-1
+  #   container_name: dm-sentinel-logs
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./config/fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+  #     - ./logs:/logs
+  #   networks:
+  #     - dm-sentinel-net
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.25'
+  #         memory: 256M
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  dm-sentinel-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ==========================================
+# Persistent Volumes
+# ==========================================
+volumes:
+  gophish_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/gophish
+      o: bind
+  
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/postgres
+      o: bind
+  
+  moodle_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/moodle
+      o: bind
+  
+  moodledata:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/moodledata
+      o: bind
+
+# ==========================================
+# USAGE INSTRUCTIONS
+# ==========================================
+# 1. Copy .env.example to .env and configure variables
+# 2. Create required directories:
+#    mkdir -p data/{gophish,postgres,moodle,moodledata} logs/{gophish,moodle,nginx} config/{gophish,moodle,nginx/conf.d} ssl backups/postgres
+# 3. Start services:
+#    docker-compose up -d
+# 4. Check logs:
+#    docker-compose logs -f
+# 5. Access services:
+#    - Gophish Admin: https://your-domain:3333
+#    - Moodle: http://your-domain:8081
+#
+# SECURITY NOTES:
+# - Change all default passwords in .env file
+# - Configure SSL certificates in ssl/ directory
+# - Set up firewall rules to restrict access
+# - Enable Docker secrets for production
+# - Configure backup strategy for volumes
+# - Monitor resource usage: docker stats
+#
+# LOW-RESOURCE VPS OPTIMIZATION:
+# - Total RAM usage: ~2GB (with all services)
+# - CPU usage: ~1.5 cores under load
+# - Disk space: ~10GB recommended
+# - Swap: 2GB recommended (add if not present)
+#
+# To add swap on Linux:
+# sudo fallocate -l 2G /swapfile
+# sudo chmod 600 /swapfile
+# sudo mkswap /swapfile
+# sudo swapon /swapfile
+# echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
